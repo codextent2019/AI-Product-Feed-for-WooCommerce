@@ -118,9 +118,11 @@ final class ACPFW_Product_Mapper {
         /**
          * Public wrapper: structured attribute values for the readiness scorer.
          *
-         * For variable products the attributes live on the variations, so the
-         * values are aggregated across all children — exactly what the feed
-         * rows will carry.
+         * Mirrors exactly what feed rows emit: variation attributes are
+         * aggregated across children, still-empty slugs fall back to the
+         * parent (non-variation attributes like Material/Gender usually live
+         * there), and gender/age_group only count when they carry a
+         * spec-valid enum value.
          *
          * @param int $product_id Product ID.
          * @return array slug => value ('' when missing).
@@ -160,11 +162,51 @@ final class ACPFW_Product_Mapper {
                                 }
                         }
 
-                        return $values;
+                        /*
+                         * Parent fallback: attributes that do NOT vary (e.g.
+                         * Material, Gender) are typically defined on the parent
+                         * only. get_attribute_value() picks them up for feed
+                         * rows — the scorer must credit them the same way.
+                         */
+                        foreach ( $slugs as $slug => $meta_key ) {
+                                if ( '' === $values[ $slug ] ) {
+                                        $values[ $slug ] = self::get_own_attribute_value( $product, $slug, $meta_key );
+                                }
+                        }
+
+                        return self::validate_scoring_enums( $values );
                 }
 
                 foreach ( $slugs as $slug => $meta_key ) {
                         $values[ $slug ] = self::get_own_attribute_value( $product, $slug, $meta_key );
+                }
+
+                return self::validate_scoring_enums( $values );
+        }
+
+        /**
+         * Apply the feed's emit rules to scoring values: gender and
+         * age_group are only written to feed rows when they carry a
+         * spec-valid enum, so free-text values must not score either.
+         *
+         * @param array $values slug => raw value.
+         * @return array
+         */
+        private static function validate_scoring_enums( $values ) {
+                if ( isset( $values['gender'] ) && '' !== trim( (string) $values['gender'] ) ) {
+                        $gender = strtolower( trim( (string) $values['gender'] ) );
+
+                        if ( ! in_array( $gender, array( 'male', 'female', 'unisex' ), true ) ) {
+                                $values['gender'] = '';
+                        }
+                }
+
+                if ( isset( $values['age_group'] ) && '' !== trim( (string) $values['age_group'] ) ) {
+                        $age_group = strtolower( trim( (string) $values['age_group'] ) );
+
+                        if ( ! in_array( $age_group, array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ), true ) ) {
+                                $values['age_group'] = '';
+                        }
                 }
 
                 return $values;
@@ -355,12 +397,17 @@ final class ACPFW_Product_Mapper {
                 $row['color']            = self::get_attribute_value( $product, $parent, 'color', '_acpfw_color' );
                 $row['size']             = self::get_attribute_value( $product, $parent, 'size', '_acpfw_size' );
 
-                $gender = self::get_attribute_value( $product, $parent, 'gender', '_acpfw_gender' );
+                /*
+                 * Gender / age_group are enum fields in the spec: normalize
+                 * case ("Male" -> "male") so merchant terms like Male/Female
+                 * actually reach the feed instead of being silently dropped.
+                 */
+                $gender = strtolower( trim( (string) self::get_attribute_value( $product, $parent, 'gender', '_acpfw_gender' ) ) );
                 if ( in_array( $gender, array( 'male', 'female', 'unisex' ), true ) ) {
                         $row['gender'] = $gender;
                 }
 
-                $age_group = self::get_attribute_value( $product, $parent, 'age_group', '_acpfw_age_group' );
+                $age_group = strtolower( trim( (string) self::get_attribute_value( $product, $parent, 'age_group', '_acpfw_age_group' ) ) );
                 if ( in_array( $age_group, array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ), true ) ) {
                         $row['age_group'] = $age_group;
                 }

@@ -135,7 +135,7 @@ final class ACPFW_Product_List_Column {
                         $messages = array();
 
                         foreach ( $issues as $code ) {
-                                $messages[] = ACPFW_Readiness_Scorer::get_issue_message( $code );
+                                $messages[] = ACPFW_Readiness_Scorer::get_issue_message( $code, $post_id );
                         }
 
                         $tooltip = implode( ' • ', $messages );

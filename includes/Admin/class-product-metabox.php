@@ -231,7 +231,7 @@ final class ACPFW_Product_Metabox {
                                 <?php foreach ( $issues as $code ) : ?>
                                         <?php $blocked = in_array( 'REQ_CORE', (array) $issues, true ) && 'REQ_CORE' === $code; ?>
                                         <li class="<?php echo $blocked ? 'acpfw-issue--blocked' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static class names. ?>">
-                                                <?php echo esc_html( ACPFW_Readiness_Scorer::get_issue_message( $code ) ); ?>
+                                                <?php echo esc_html( ACPFW_Readiness_Scorer::get_issue_message( $code, $product_id ) ); ?>
                                         </li>
                                 <?php endforeach; ?>
                         </ul>
