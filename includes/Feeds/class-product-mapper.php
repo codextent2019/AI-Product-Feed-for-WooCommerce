@@ -116,13 +116,28 @@ final class ACPFW_Product_Mapper {
         }
 
         /**
+         * Slug => plugin-meta map for the five feed-emitted attributes.
+         *
+         * @return array
+         */
+        private static function scoring_slug_map() {
+                return array(
+                        'material'  => '_acpfw_material',
+                        'color'     => '_acpfw_color',
+                        'size'      => '_acpfw_size',
+                        'gender'    => '_acpfw_gender',
+                        'age_group' => '_acpfw_age_group',
+                );
+        }
+
+        /**
          * Public wrapper: structured attribute values for the readiness scorer.
          *
          * Mirrors exactly what feed rows emit: variation attributes are
          * aggregated across children, still-empty slugs fall back to the
-         * parent (non-variation attributes like Material/Gender usually live
-         * there), and gender/age_group only count when they carry a
-         * spec-valid enum value.
+         * parent under the SAME single-value rule the rows use (an option
+         * pool like "Blue/Green/Red" never lands on a row), and
+         * gender/age_group only count when they carry a spec-valid enum.
          *
          * @param int $product_id Product ID.
          * @return array slug => value ('' when missing).
@@ -134,13 +149,7 @@ final class ACPFW_Product_Mapper {
                         return array();
                 }
 
-                $slugs  = array(
-                        'material'  => '_acpfw_material',
-                        'color'     => '_acpfw_color',
-                        'size'      => '_acpfw_size',
-                        'gender'    => '_acpfw_gender',
-                        'age_group' => '_acpfw_age_group',
-                );
+                $slugs  = self::scoring_slug_map();
                 $values = array();
 
                 if ( $product->is_type( 'variable' ) ) {
@@ -165,12 +174,13 @@ final class ACPFW_Product_Mapper {
                         /*
                          * Parent fallback: attributes that do NOT vary (e.g.
                          * Material, Gender) are typically defined on the parent
-                         * only. get_attribute_value() picks them up for feed
-                         * rows — the scorer must credit them the same way.
+                         * only. resolve_attribute() in strict mode applies the
+                         * exact same single-value rule the feed rows use, so
+                         * the score can never credit data the feed drops.
                          */
                         foreach ( $slugs as $slug => $meta_key ) {
                                 if ( '' === $values[ $slug ] ) {
-                                        $values[ $slug ] = self::get_own_attribute_value( $product, $slug, $meta_key );
+                                        $values[ $slug ] = self::resolve_attribute( $product, $slug, $meta_key, false );
                                 }
                         }
 
@@ -726,14 +736,12 @@ final class ACPFW_Product_Mapper {
          * Structured attribute lookup with correct variation semantics.
          *
          * Resolution order:
-         *  1. The object's OWN value (simple product term, or the variation's
-         *     attribute_* meta via WC_Product_Variation::get_attribute()).
-         *  2. The object's own plugin meta key.
-         *  3. The parent's shared attribute — accepted only when it resolves
-         *     to exactly ONE term. A variable parent's used-for-variations
-         *     attribute holds the whole option pool ("Blue, Green, Red"),
+         *  1. The object's OWN value (variation attribute meta, the simple
+         *     product's terms/options, or its plugin meta key).
+         *  2. The parent's shared attribute — accepted only when it resolves
+         *     to exactly ONE value. A variable parent's used-for-variations
+         *     attribute holds the whole option pool ("Blue/Green/Red"),
          *     which is never a valid per-row value.
-         *  4. The parent's plugin meta key.
          *
          * @param WC_Product      $product  Product or variation object.
          * @param WC_Product|null $parent   Parent product or null.
@@ -748,27 +756,14 @@ final class ACPFW_Product_Mapper {
                         return $own;
                 }
 
-                if ( null === $parent ) {
-                        return '';
-                }
-
-                $taxonomy = 'pa_' . $slug;
-
-                if ( taxonomy_exists( $taxonomy ) ) {
-                        $terms = wc_get_product_terms( $parent->get_id(), $taxonomy, array( 'fields' => 'names' ) );
-
-                        if ( ! is_wp_error( $terms ) && 1 === count( $terms ) ) {
-                                return (string) $terms[0];
-                        }
-                }
-
-                $meta = get_post_meta( $parent->get_id(), $meta_key, true );
-
-                return ( '' !== $meta && null !== $meta ) ? (string) $meta : '';
+                return self::resolve_attribute( $parent, $slug, $meta_key, false );
         }
 
         /**
          * Attribute value living on the object itself (no parent fallback).
+         *
+         * Multiple own values join with "/" — the multi-value convention
+         * used by Google Merchant Center / ChatGPT Shopping ("Blue/Green").
          *
          * @param WC_Product $product  Product or variation object.
          * @param string     $slug     Attribute slug (without pa_ prefix).
@@ -776,19 +771,48 @@ final class ACPFW_Product_Mapper {
          * @return string
          */
         private static function get_own_attribute_value( $product, $slug, $meta_key ) {
+                return self::resolve_attribute( $product, $slug, $meta_key, true );
+        }
+
+        /**
+         * Unified attribute resolver for every product type
+         * (simple / variable / variation / external-affiliate / grouped).
+         *
+         * Reads WC_Product_Attribute objects directly instead of the legacy
+         * get_attribute() helper: that helper returns a comma-joined string
+         * (ambiguating values that contain commas), rejects nothing, and
+         * returns raw arrays for local attributes on some WC versions. This
+         * resolver matches by sanitized attribute name, resolves taxonomy
+         * terms to their labels, and honors the $allow_multi contract:
+         * true joins every assigned value ("Blue/Green"), false accepts the
+         * attribute only when it resolves to exactly one value so an option
+         * pool can never be mistaken for a single product property.
+         *
+         * @param WC_Product|null $product     Product or variation object.
+         * @param string          $slug        Attribute slug (without pa_ prefix).
+         * @param string          $meta_key    Fallback meta key.
+         * @param bool            $allow_multi Accept multi-valued attributes.
+         * @return string '' when no usable value exists.
+         */
+        private static function resolve_attribute( $product, $slug, $meta_key, $allow_multi ) {
+                if ( null === $product || ! $product instanceof WC_Product ) {
+                        return '';
+                }
+
                 $taxonomy = 'pa_' . $slug;
+                $wanted   = array( $slug, $taxonomy );
 
                 /*
-                 * Variations: read the raw attribute meta directly. Keys arrive
-                 * as "pa_color" / "logo" (current WC) or historically as
-                 * "attribute_pa_color" — match any form, then map the stored
-                 * slug to the term label.
+                 * Variations: the value lives in attribute meta, e.g.
+                 * "attribute_pa_size" => "large" (current WC) or historically
+                 * "pa_size". Match any key form, then map the stored slug to
+                 * its term label. A variation's value is single by nature.
                  */
                 if ( $product->is_type( 'variation' ) ) {
                         foreach ( (array) $product->get_attributes() as $attr_key => $attr_value ) {
                                 $clean = preg_replace( '/^attribute_/', '', strtolower( (string) $attr_key ) );
 
-                                if ( $clean !== $taxonomy && $clean !== $slug ) {
+                                if ( ! in_array( $clean, $wanted, true ) ) {
                                         continue;
                                 }
 
@@ -808,27 +832,87 @@ final class ACPFW_Product_Mapper {
                 }
 
                 /*
-                 * Simple/external products: single taxonomy term or local
-                 * (custom) attribute with a matching name.
+                 * Simple / variable / external products: scan the product's
+                 * WC_Product_Attribute definitions — the only representation
+                 * that covers global (taxonomy) and local (custom) attributes
+                 * alike in every supported WC version.
                  */
-                if ( taxonomy_exists( $taxonomy ) ) {
-                        $value = trim( (string) $product->get_attribute( $taxonomy ) );
+                foreach ( $product->get_attributes() as $attribute ) {
+                        if ( ! $attribute instanceof WC_Product_Attribute ) {
+                                continue;
+                        }
 
-                        if ( '' !== $value && false === strpos( $value, ',' ) ) {
-                                return self::normalize_attribute_label( $value, $taxonomy );
+                        if ( ! in_array( sanitize_title( $attribute->get_name() ), $wanted, true ) ) {
+                                continue;
+                        }
+
+                        $values = array();
+
+                        if ( $attribute->is_taxonomy() ) {
+                                $terms = wp_get_post_terms( $product->get_id(), $attribute->get_name(), array( 'fields' => 'names' ) );
+
+                                if ( ! is_wp_error( $terms ) && is_array( $terms ) ) {
+                                        foreach ( $terms as $term_name ) {
+                                                $term_name = trim( (string) $term_name );
+
+                                                if ( '' !== $term_name ) {
+                                                        $values[] = $term_name;
+                                                }
+                                        }
+                                }
+                        } else {
+                                foreach ( (array) $attribute->get_options() as $option ) {
+                                        $option = trim( (string) $option );
+
+                                        if ( '' !== $option ) {
+                                                $values[] = $option;
+                                        }
+                                }
+                        }
+
+                        if ( ! empty( $values ) ) {
+                                if ( ! $allow_multi && count( $values ) > 1 ) {
+                                        // Option pool ("Blue/Green/Red") — never a per-row value.
+                                        return '';
+                                }
+
+                                return implode( '/', array_unique( $values ) );
                         }
                 }
 
-                $value = trim( (string) $product->get_attribute( $slug ) );
-
-                if ( '' !== $value && false === strpos( $value, ',' ) ) {
-                        return $value;
-                }
-
-                // 3) Plugin meta on the object itself.
+                // Plugin meta on the object itself (always a single value).
                 $meta = get_post_meta( $product->get_id(), $meta_key, true );
 
                 return ( '' !== $meta && null !== $meta ) ? (string) $meta : '';
+        }
+
+        /**
+         * True when a structured attribute exists on a variable parent but
+         * its values cannot reach the per-variation feed rows: several
+         * options are assigned (an option pool) or values were only defined
+         * per-variation and no variation carries one yet.
+         *
+         * Used purely to give the readiness message a precise, actionable
+         * hint; it never influences scoring itself.
+         *
+         * @param int    $product_id Product ID.
+         * @param string $slug       Attribute slug (without pa_ prefix).
+         * @return bool
+         */
+        public static function has_pool_attribute( $product_id, $slug ) {
+                $product = wc_get_product( absint( $product_id ) );
+
+                if ( ! $product instanceof WC_Product || ! $product->is_type( 'variable' ) ) {
+                        return false;
+                }
+
+                $map      = self::scoring_slug_map();
+                $meta_key = isset( $map[ $slug ] ) ? $map[ $slug ] : '_acpfw_' . $slug;
+
+                $loose  = self::resolve_attribute( $product, $slug, $meta_key, true );
+                $strict = self::resolve_attribute( $product, $slug, $meta_key, false );
+
+                return ( '' !== $loose && '' === $strict );
         }
 
         /**

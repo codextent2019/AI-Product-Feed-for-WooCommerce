@@ -148,13 +148,38 @@ final class ACPFW_Readiness_Scorer {
                         }
                 }
 
+                /*
+                 * Detect "present but unusable" attributes: the product has
+                 * them, but their values can never reach the per-variation
+                 * feed rows (option pool or per-variation values that were
+                 * never saved). Surface a precise hint instead of silently
+                 * counting them as missing.
+                 */
+                $pool = array();
+
+                foreach ( $labels as $slug => $label ) {
+                        if ( in_array( $label, $missing, true ) && ACPFW_Product_Mapper::has_pool_attribute( $product_id, $slug ) ) {
+                                $pool[] = $label;
+                        }
+                }
+
                 if ( ! empty( $found ) && ! empty( $missing ) ) {
-                        return sprintf(
+                        $message = sprintf(
                                 /* translators: 1: attribute names the product already has, 2: attribute names that would satisfy the check. */
                                 __( 'Has %1$s — add at least one more AI attribute (%2$s).', 'agentic-commerce-ai-product-feed' ),
                                 implode( ', ', $found ),
                                 implode( ', ', $missing )
                         );
+
+                        if ( ! empty( $pool ) ) {
+                                $message .= sprintf(
+                                        /* translators: %s: attribute names that exist but cannot reach feed rows. */
+                                        __( ' Note: %s cannot reach the feed rows yet — keep one single value on the product, or set a value on each variation and save.', 'agentic-commerce-ai-product-feed' ),
+                                        implode( ', ', $pool )
+                                );
+                        }
+
+                        return $message;
                 }
 
                 if ( ! empty( $found ) ) {
