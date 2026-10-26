@@ -416,11 +416,17 @@ final class ACPFW_Plugin_Core {
          * External cron entry point: admin-post.php?action=acpfw_cron_rebuild&token=…
          *
          * Authenticated by the stored cron token (never by user sessions), so
-         * real cron jobs / uptime monitors can trigger a full rebuild.
+         * real cron jobs / uptime monitors can trigger a full rebuild. Requests
+         * under /wp-admin/ are never cached by page-cache plugins or CDNs;
+         * explicit no-cache headers are still sent so even a misconfigured
+         * proxy can never replay a stale response.
          *
          * @return void
          */
         public function handle_cron_rebuild() {
+                nocache_headers();
+                ignore_user_abort( true ); // Finish the rebuild even if the cron service disconnects early.
+
                 $token  = isset( $_GET['token'] ) ? sanitize_key( wp_unslash( $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
                 $stored = (string) $this->get_setting( 'cron_token', '' );
 
