@@ -65,11 +65,13 @@ final class ACPFW_Plugin_Core {
          * @return void
          */
         public function maybe_prime_llms_files() {
-                if ( 'yes' !== $this->get_setting( 'enable_llms_txt', 'yes' ) ) {
+                // Transient first: keeps every init request from hydrating the
+                // settings cache (which could go stale later in the request).
+                if ( get_transient( 'acpfw_llms_primed' ) ) {
                         return;
                 }
 
-                if ( get_transient( 'acpfw_llms_primed' ) ) {
+                if ( 'yes' !== $this->get_setting( 'enable_llms_txt', 'yes' ) ) {
                         return;
                 }
 
@@ -261,6 +263,18 @@ final class ACPFW_Plugin_Core {
                 }
 
                 return $this->settings;
+        }
+
+        /**
+         * Drop the in-memory settings cache so the next read hits the DB.
+         *
+         * Must be called after update_option() in the same request, otherwise
+         * modules keep reading the pre-save values.
+         *
+         * @return void
+         */
+        public function refresh_settings() {
+                $this->settings = array();
         }
 
         /**

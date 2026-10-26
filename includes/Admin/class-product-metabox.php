@@ -49,7 +49,7 @@ final class ACPFW_Product_Metabox {
         }
 
         /**
-         * Inline CSS + tiny JS for the repeatable FAQ rows.
+         * Metabox CSS + JS (repeatable FAQ rows).
          *
          * @param string $hook Current admin page hook.
          * @return void
@@ -65,34 +65,19 @@ final class ACPFW_Product_Metabox {
                         return;
                 }
 
-                wp_register_style( 'acpfw-metabox', false, array(), ACPFW_VERSION );
-                wp_enqueue_style( 'acpfw-metabox' );
-                wp_add_inline_style(
+                wp_enqueue_style(
                         'acpfw-metabox',
-                        '.acpfw-metabox{max-width:860px}'
-                        . '.acpfw-score-box{display:flex;align-items:center;gap:12px;margin:6px 0 14px;}'
-                        . '.acpfw-score-num{font-size:28px;font-weight:700;line-height:1;}'
-                        . '.acpfw-issues{margin:0 0 14px 16px;list-style:disc;}'
-                        . '.acpfw-issues li{margin:2px 0;}'
-                        . '.acpfw-faq-row{display:flex;gap:8px;margin-bottom:8px;}'
-                        . '.acpfw-faq-row input[type=text],.acpfw-faq-row textarea{flex:1;}'
-                        . '.acpfw-faq-row textarea{min-height:52px;}'
-                        . '.acpfw-field{margin:0 0 12px;}'
-                        . '.acpfw-field label{display:block;font-weight:600;margin-bottom:4px;}'
-                        . '.acpfw-hint{color:#646970;font-size:12px;margin:2px 0 0;}'
+                        ACPFW_PLUGIN_URL . 'assets/css/admin-metabox.css',
+                        array(),
+                        ACPFW_VERSION
                 );
 
-                wp_register_script( 'acpfw-metabox', false, array(), ACPFW_VERSION, true );
-                wp_enqueue_script( 'acpfw-metabox' );
-                wp_add_inline_script(
+                wp_enqueue_script(
                         'acpfw-metabox',
-                        "(function(){var w=document.getElementById('acpfw-faq-rows');if(!w){return;}" .
-                        "document.getElementById('acpfw-add-faq').addEventListener('click',function(e){e.preventDefault();" .
-                        "var t=document.getElementById('acpfw-faq-template'),i=parseInt(w.getAttribute('data-index'),10)+1;" .
-                        "w.setAttribute('data-index',String(i));var d=document.createElement('div');d.innerHTML=t.innerHTML.replace(/__I__/g,String(i));" .
-                        "w.appendChild(d.firstChild);});" .
-                        "w.addEventListener('click',function(e){if(e.target.classList.contains('acpfw-remove-faq')){e.preventDefault();e.target.closest('.acpfw-faq-row').remove();}};" .
-                        "})();"
+                        ACPFW_PLUGIN_URL . 'assets/js/admin-metabox.js',
+                        array(),
+                        ACPFW_VERSION,
+                        true
                 );
         }
 
@@ -118,13 +103,13 @@ final class ACPFW_Product_Metabox {
                         <?php $this->render_score_box( $product_id, $score, is_array( $issues ) ? $issues : array(), $excluded ); ?>
 
                         <div class="acpfw-field">
-                                <label for="acpfw_brand"><?php esc_html_e( 'Brand override', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                <label class="acpfw-field__label" for="acpfw_brand"><?php esc_html_e( 'Brand override', 'agentic-commerce-ai-product-feed' ); ?></label>
                                 <input type="text" id="acpfw_brand" name="acpfw_brand" value="<?php echo esc_attr( $brand ); ?>" class="regular-text" />
-                                <p class="acpfw-hint"><?php esc_html_e( 'Optional. Leaves empty to auto-detect from Brands taxonomy, attributes or SEO plugins. OpenAI requires a brand on every product.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                <p class="acpfw-field__hint"><?php esc_html_e( 'Optional. Leave empty to auto-detect from Brands, attributes or SEO plugins. OpenAI requires a brand on every product.', 'agentic-commerce-ai-product-feed' ); ?></p>
                         </div>
 
                         <div class="acpfw-field">
-                                <label for="acpfw_availability"><?php esc_html_e( 'Availability override', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                <label class="acpfw-field__label" for="acpfw_availability"><?php esc_html_e( 'Availability override', 'agentic-commerce-ai-product-feed' ); ?></label>
                                 <select id="acpfw_availability" name="acpfw_availability">
                                         <option value=""><?php esc_html_e( 'Automatic (from stock status)', 'agentic-commerce-ai-product-feed' ); ?></option>
                                         <option value="in_stock" <?php selected( 'in_stock', $availability ); ?>><?php esc_html_e( 'In stock', 'agentic-commerce-ai-product-feed' ); ?></option>
@@ -141,18 +126,18 @@ final class ACPFW_Product_Metabox {
                                 </label>
                         </div>
 
-                        <div class="acpfw-field">
-                                <label><?php esc_html_e( 'Conversational Q&A (for AI shopping prompts)', 'agentic-commerce-ai-product-feed' ); ?></label>
-                                <p class="acpfw-hint" style="margin-bottom:8px;"><?php esc_html_e( 'Add the questions shoppers actually ask, e.g. "Is this machine washable?" — at least 2 pairs earn the full FAQ score.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                        <div class="acpfw-field acpfw-field--faq">
+                                <span class="acpfw-field__label"><?php esc_html_e( 'Conversational Q&A (for AI shopping prompts)', 'agentic-commerce-ai-product-feed' ); ?></span>
+                                <p class="acpfw-field__hint acpfw-faq-intro"><?php esc_html_e( 'Add the questions shoppers actually ask, e.g. "Is this machine washable?" — at least 2 pairs earn the full FAQ score.', 'agentic-commerce-ai-product-feed' ); ?></p>
 
-                                <div id="acpfw-faq-rows" data-index="<?php echo esc_attr( (string) count( $faqs ) ); ?>">
+                                <div id="acpfw-faq-rows" class="acpfw-faq-rows" data-index="<?php echo esc_attr( (string) count( $faqs ) ); ?>">
                                         <?php foreach ( $faqs as $i => $faq ) : ?>
                                                 <?php self::render_faq_row( (int) $i, $faq ); ?>
                                         <?php endforeach; ?>
                                 </div>
 
                                 <p>
-                                        <button type="button" class="button" id="acpfw-add-faq"><?php esc_html_e( '+ Add question', 'agentic-commerce-ai-product-feed' ); ?></button>
+                                        <button type="button" class="button button-secondary" id="acpfw-add-faq"><?php esc_html_e( '+ Add question', 'agentic-commerce-ai-product-feed' ); ?></button>
                                 </p>
 
                                 <script type="text/html" id="acpfw-faq-template">
@@ -193,7 +178,12 @@ final class ACPFW_Product_Metabox {
          */
         private function render_score_box( $product_id, $score, $issues, $excluded ) {
                 if ( $excluded ) {
-                        echo '<div class="acpfw-score-box"><span class="acpfw-score-num" style="color:#8c8f94;">' . esc_html__( 'Excluded', 'agentic-commerce-ai-product-feed' ) . '</span><span>' . esc_html__( 'This product is hidden from all AI channels. Uncheck the box below to include it.', 'agentic-commerce-ai-product-feed' ) . '</span></div>';
+                        printf(
+                                '<div class="acpfw-score-box"><span class="acpfw-score-box__num" style="color:#8c8f97;">%1$s</span><span class="acpfw-score-box__meta"><span class="acpfw-score-box__label acpfw-score-box__label--excluded">%2$s</span><span style="font-size:12.5px;color:#6b6e76;">%3$s</span></span></div>',
+                                esc_html__( '—', 'agentic-commerce-ai-product-feed' ),
+                                esc_html__( 'Excluded', 'agentic-commerce-ai-product-feed' ),
+                                esc_html__( 'This product is hidden from all AI channels. Uncheck the box below to include it.', 'agentic-commerce-ai-product-feed' )
+                        );
 
                         return;
                 }
@@ -207,14 +197,17 @@ final class ACPFW_Product_Metabox {
                 $score = (int) $score;
 
                 if ( $score >= 80 ) {
-                        $color = '#46b450';
+                        $color = '#379a52';
                         $label = __( 'AI Ready', 'agentic-commerce-ai-product-feed' );
+                        $mod   = 'ready';
                 } elseif ( $score >= 50 ) {
-                        $color = '#dba617';
+                        $color = '#b3821c';
                         $label = __( 'Needs Polish', 'agentic-commerce-ai-product-feed' );
+                        $mod   = 'polish';
                 } else {
-                        $color = '#dc3232';
+                        $color = '#cc3333';
                         $label = __( 'AI Blocked', 'agentic-commerce-ai-product-feed' );
+                        $mod   = 'blocked';
                 }
 
                 $rescore_url = wp_nonce_url(
@@ -229,9 +222,9 @@ final class ACPFW_Product_Metabox {
                 );
                 ?>
                 <div class="acpfw-score-box">
-                        <span class="acpfw-score-num" style="color:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( (string) $score ); ?><span style="font-size:13px;color:#646970;">/100</span></span>
-                        <span>
-                                <strong><?php echo esc_html( $label ); ?></strong><br />
+                        <span class="acpfw-score-box__num" style="color:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( (string) $score ); ?><small>/100</small></span>
+                        <span class="acpfw-score-box__meta">
+                                <span class="acpfw-score-box__label acpfw-score-box__label--<?php echo esc_attr( $mod ); ?>"><?php echo esc_html( $label ); ?></span>
                                 <a href="<?php echo esc_url( $rescore_url ); ?>"><?php esc_html_e( 'Recalculate score', 'agentic-commerce-ai-product-feed' ); ?></a>
                         </span>
                 </div>
@@ -239,11 +232,14 @@ final class ACPFW_Product_Metabox {
                 <?php if ( ! empty( $issues ) ) : ?>
                         <ul class="acpfw-issues">
                                 <?php foreach ( $issues as $code ) : ?>
-                                        <li><?php echo esc_html( ACPFW_Readiness_Scorer::get_issue_message( $code ) ); ?></li>
+                                        <?php $blocked = in_array( 'REQ_CORE', (array) $issues, true ) && 'REQ_CORE' === $code; ?>
+                                        <li class="<?php echo $blocked ? 'acpfw-issue--blocked' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static class names. ?>">
+                                                <?php echo esc_html( ACPFW_Readiness_Scorer::get_issue_message( $code ) ); ?>
+                                        </li>
                                 <?php endforeach; ?>
                         </ul>
                 <?php else : ?>
-                        <p style="color:#46b450;margin-top:-6px;"><?php esc_html_e( 'All readiness checks passed — this product is fully AI Ready.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                        <p class="acpfw-all-good"><?php esc_html_e( 'All readiness checks passed — this product is fully AI Ready.', 'agentic-commerce-ai-product-feed' ); ?></p>
                 <?php endif; ?>
                 <?php
         }

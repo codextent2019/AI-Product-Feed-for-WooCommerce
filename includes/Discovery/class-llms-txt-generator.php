@@ -132,15 +132,15 @@ final class ACPFW_LLMS_Txt_Generator {
                 // Commerce section: machine files first (most useful to agents).
                 $lines[] = '## ' . __( 'Commerce data', 'agentic-commerce-ai-product-feed' );
                 $lines[] = '';
-                $lines[] = '- [' . __( 'Full product catalog', 'agentic-commerce-ai-product-feed' ) . '](/llms-full.txt): ' . __( 'every purchasable product with prices, availability and links', 'agentic-commerce-ai-product-feed' );
-                $lines[] = '- [' . __( 'Commerce guide', 'agentic-commerce-ai-product-feed' ) . '](/llms-commerce.txt): ' . __( 'how to buy, shipping, returns, payments and support', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [' . __( 'Full product catalog', 'agentic-commerce-ai-product-feed' ) . '](' . self::get_llms_full_url() . '): ' . __( 'every purchasable product with prices, availability and links', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [' . __( 'Commerce guide', 'agentic-commerce-ai-product-feed' ) . '](' . self::get_llms_commerce_url() . '): ' . __( 'how to buy, shipping, returns, payments and support', 'agentic-commerce-ai-product-feed' );
 
                 if ( 'yes' === acpfw()->get_setting( 'enable_acp_json', 'yes' ) ) {
-                        $lines[] = '- [' . __( 'ACP discovery manifest', 'agentic-commerce-ai-product-feed' ) . '](/.well-known/acp.json): ' . __( 'machine-readable store + feed metadata', 'agentic-commerce-ai-product-feed' );
+                        $lines[] = '- [' . __( 'ACP discovery manifest', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/.well-known/acp.json' ) . '): ' . __( 'machine-readable store + feed metadata', 'agentic-commerce-ai-product-feed' );
                 }
 
                 if ( 'yes' === acpfw()->get_setting( 'enable_ucp', 'yes' ) ) {
-                        $lines[] = '- [' . __( 'UCP discovery manifest', 'agentic-commerce-ai-product-feed' ) . '](/.well-known/ucp): ' . __( 'universal commerce protocol discovery', 'agentic-commerce-ai-product-feed' );
+                        $lines[] = '- [' . __( 'UCP discovery manifest', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/.well-known/ucp' ) . '): ' . __( 'universal commerce protocol discovery', 'agentic-commerce-ai-product-feed' );
                 }
 
                 $jsonl_url = ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' );
@@ -373,13 +373,13 @@ final class ACPFW_LLMS_Txt_Generator {
         private static function render_product_block( $product, $currency ) {
                 $product_id = $product->get_id();
                 $brand      = ACPFW_Product_Mapper::get_resolved_brand( $product_id );
-                $price      = self::resolve_price_text( $product );
+                $price      = self::resolve_price_text( $product, $currency );
 
                 $lines = array();
                 $lines[] = '## ' . self::clean( $product->get_name(), 150 );
                 $lines[] = '';
-                $lines[] = '- URL: ' . get_permalink( $product );
-                $lines[] = '- ' . __( 'Price', 'agentic-commerce-ai-product-feed' ) . ': ' . $price . ( '' !== $currency ? ' ' . $currency : '' );
+                $lines[] = '- URL: ' . esc_url_raw( (string) $product->get_permalink() );
+                $lines[] = '- ' . __( 'Price', 'agentic-commerce-ai-product-feed' ) . ': ' . $price;
                 $lines[] = '- ' . __( 'Availability', 'agentic-commerce-ai-product-feed' ) . ': ' . self::availability_label( $product );
 
                 if ( '' !== $brand ) {
@@ -444,11 +444,15 @@ final class ACPFW_LLMS_Txt_Generator {
 
         /**
          * Price text for a product (handles variable ranges and sales).
+         * Always includes the currency for real prices; informational
+         * fallbacks ("See product page") stay plain so the currency is never
+         * glued onto a sentence.
          *
-         * @param WC_Product $product Product object.
+         * @param WC_Product $product  Product object.
+         * @param string     $currency Currency code.
          * @return string
          */
-        private static function resolve_price_text( $product ) {
+        private static function resolve_price_text( $product, $currency ) {
                 if ( $product->is_type( 'variable' ) ) {
                         $min = $product->get_variation_price( 'min', true );
                         $max = $product->get_variation_price( 'max', true );
@@ -457,23 +461,23 @@ final class ACPFW_LLMS_Txt_Generator {
                                 return __( 'See product page', 'agentic-commerce-ai-product-feed' );
                         }
 
-                        $min = wc_format_decimal( $min );
-                        $max = wc_format_decimal( $max );
+                        $min = number_format( (float) $min, 2, '.', '' );
+                        $max = number_format( (float) $max, 2, '.', '' );
 
-                        return ( $min === $max ) ? $min : $min . ' - ' . $max;
+                        return ( $min === $max ) ? $min . ' ' . $currency : $min . ' - ' . $max . ' ' . $currency;
                 }
 
-                $price = wc_format_decimal( $product->get_price() );
+                $price = (string) $product->get_price();
 
-                if ( '' === $price || '0' === $price ) {
+                if ( '' === $price || '0' === $price || '0.00' === $price ) {
                         return __( 'See product page', 'agentic-commerce-ai-product-feed' );
                 }
 
                 if ( (float) $product->get_sale_price() > 0 && (float) $product->get_sale_price() < (float) $product->get_regular_price() ) {
-                        return wc_format_decimal( $product->get_regular_price() ) . ' ' . __( '(on sale: ', 'agentic-commerce-ai-product-feed' ) . $price . ')';
+                        return number_format( (float) $product->get_regular_price(), 2, '.', '' ) . ' ' . $currency . ' ' . __( '(on sale: ', 'agentic-commerce-ai-product-feed' ) . number_format( (float) $product->get_sale_price(), 2, '.', '' ) . ' ' . $currency . ')';
                 }
 
-                return $price;
+                return number_format( (float) $price, 2, '.', '' ) . ' ' . $currency;
         }
 
         /**

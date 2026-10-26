@@ -187,13 +187,10 @@ final class ACPFW_Env_Checks {
                                 continue;
                         }
 
-                        $before_rules = strtok( $group, "\n" );
-
                         foreach ( preg_split( '/\R/', (string) $group ) as $line ) {
                                 $line = trim( (string) $line );
 
                                 if ( 0 === stripos( $line, 'User-agent:' ) ) {
-                                        $before_rules = $line;
                                         continue;
                                 }
 
@@ -252,42 +249,42 @@ final class ACPFW_Env_Checks {
         public static function render() {
                 $results = self::get_results();
                 ?>
-                <h3 style="margin-top:20px;"><?php esc_html_e( 'AI crawler monitor', 'agentic-commerce-ai-product-feed' ); ?></h3>
+                <h3 style="margin:22px 0 6px;font-size:14px;font-weight:600;"><?php esc_html_e( 'AI crawler monitor', 'agentic-commerce-ai-product-feed' ); ?></h3>
 
-                <table class="widefat striped" style="max-width:820px;">
-                        <tbody>
-                                <?php foreach ( $results as $result ) : ?>
-                                        <?php
-                                        $color = ( 'pass' === $result['status'] ) ? '#46b450' : ( ( 'warn' === $result['status'] ) ? '#dba617' : '#dc3232' );
-                                        $icon  = ( 'pass' === $result['status'] ) ? '✓' : ( ( 'warn' === $result['status'] ) ? '!' : '✕' );
-                                        ?>
-                                        <tr>
-                                                <td style="width:26px;color:<?php echo esc_attr( $color ); ?>;font-weight:700;"><?php echo esc_html( $icon ); ?></td>
-                                                <td>
-                                                        <strong><?php echo esc_html( $result['label'] ); ?></strong><br />
-                                                        <span style="color:#50575e;"><?php echo esc_html( $result['detail'] ); ?></span>
-                                                </td>
-                                        </tr>
+                <ul class="acpfw-monitor">
+                        <?php foreach ( $results as $result ) : ?>
+                                <?php
+                                $mod = ( 'pass' === $result['status'] ) ? 'pass' : ( ( 'warn' === $result['status'] ) ? 'warn' : 'fail' );
+                                $icon = ( 'pass' === $result['status'] ) ? '✓' : ( ( 'warn' === $result['status'] ) ? '!' : '✕' );
+                                ?>
+                                <li>
+                                        <span class="acpfw-monitor__icon acpfw-monitor__icon--<?php echo esc_attr( $mod ); ?>"><?php echo esc_html( $icon ); ?></span>
+                                        <span>
+                                                <span class="acpfw-monitor__label"><?php echo esc_html( $result['label'] ); ?></span>
+                                                <span class="acpfw-monitor__detail" style="display:block;"><?php echo esc_html( $result['detail'] ); ?></span>
+                                        </span>
+                                </li>
 
-                                        <?php if ( ! empty( $result['rows'] ) ) : ?>
-                                                <?php foreach ( $result['rows'] as $bot ) : ?>
-                                                        <tr>
-                                                                <td style="color:<?php echo $bot['blocked'] ? '#dc3232' : '#46b450'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static color constants. ?>;"><?php echo $bot['blocked'] ? '✕' : '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static icons. ?></td>
-                                                                <td>
-                                                                        <code><?php echo esc_html( $bot['agent'] ); ?></code> — <?php echo esc_html( $bot['label'] ); ?>
-                                                                        <?php if ( $bot['blocked'] ) : ?>
-                                                                                <strong style="color:#dc3232;"><?php esc_html_e( 'BLOCKED', 'agentic-commerce-ai-product-feed' ); ?></strong>
-                                                                        <?php endif; ?>
-                                                                </td>
-                                                        </tr>
-                                                <?php endforeach; ?>
-                                        <?php endif; ?>
-                                <?php endforeach; ?>
-                        </tbody>
-                </table>
+                                <?php if ( ! empty( $result['rows'] ) ) : ?>
+                                        <?php foreach ( $result['rows'] as $bot ) : ?>
+                                                <?php $bot_mod = $bot['blocked'] ? 'fail' : 'pass'; ?>
+                                                <li style="padding:5px 0 5px 12px;">
+                                                        <span class="acpfw-monitor__icon acpfw-monitor__icon--<?php echo esc_attr( $bot_mod ); ?>" style="width:18px;height:18px;font-size:10px;"><?php echo $bot['blocked'] ? '✕' : '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static glyphs. ?></span>
+                                                        <span style="font-size:12.5px;color:#3c434a;">
+                                                                <code><?php echo esc_html( $bot['agent'] ); ?></code> — <?php echo esc_html( $bot['label'] ); ?>
+                                                                <?php if ( $bot['blocked'] ) : ?>
+                                                                        <strong style="color:var(--acpfw-red,#cc3333);"><?php esc_html_e( 'BLOCKED', 'agentic-commerce-ai-product-feed' ); ?></strong>
+                                                                <?php endif; ?>
+                                                        </span>
+                                                </li>
+                                        <?php endforeach; ?>
+                                <?php endif; ?>
+                        <?php endforeach; ?>
+                </ul>
 
-                <p style="margin-top:10px;">
-                        <a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_env_recheck' ), 'acpfw_env_recheck' ) ); ?>">
+                <p style="margin:14px 0 0;">
+                        <a class="button acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_env_recheck' ), 'acpfw_env_recheck' ) ); ?>">
+                                <span class="dashicons dashicons-update-alt" style="margin-top:3px;"></span>
                                 <?php esc_html_e( 'Re-run checks', 'agentic-commerce-ai-product-feed' ); ?>
                         </a>
                 </p>

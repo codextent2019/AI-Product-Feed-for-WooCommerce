@@ -118,6 +118,10 @@ final class ACPFW_Product_Mapper {
         /**
          * Public wrapper: structured attribute values for the readiness scorer.
          *
+         * For variable products the attributes live on the variations, so the
+         * values are aggregated across all children — exactly what the feed
+         * rows will carry.
+         *
          * @param int $product_id Product ID.
          * @return array slug => value ('' when missing).
          */
@@ -137,8 +141,30 @@ final class ACPFW_Product_Mapper {
                 );
                 $values = array();
 
+                if ( $product->is_type( 'variable' ) ) {
+                        foreach ( $slugs as $slug => $meta_key ) {
+                                $values[ $slug ] = '';
+                        }
+
+                        foreach ( $product->get_children() as $child_id ) {
+                                $variation = wc_get_product( $child_id );
+
+                                if ( ! $variation instanceof WC_Product ) {
+                                        continue;
+                                }
+
+                                foreach ( $slugs as $slug => $meta_key ) {
+                                        if ( '' === $values[ $slug ] ) {
+                                                $values[ $slug ] = self::get_own_attribute_value( $variation, $slug, $meta_key );
+                                        }
+                                }
+                        }
+
+                        return $values;
+                }
+
                 foreach ( $slugs as $slug => $meta_key ) {
-                        $values[ $slug ] = self::get_attribute_value( $product, null, $slug, $meta_key );
+                        $values[ $slug ] = self::get_own_attribute_value( $product, $slug, $meta_key );
                 }
 
                 return $values;
@@ -648,39 +674,129 @@ final class ACPFW_Product_Mapper {
         }
 
         /**
-         * Structured attribute lookup: pa_ taxonomy first, then plugin meta.
+         * Structured attribute lookup with correct variation semantics.
          *
-         * @param WC_Product      $product  Product object.
+         * Resolution order:
+         *  1. The object's OWN value (simple product term, or the variation's
+         *     attribute_* meta via WC_Product_Variation::get_attribute()).
+         *  2. The object's own plugin meta key.
+         *  3. The parent's shared attribute — accepted only when it resolves
+         *     to exactly ONE term. A variable parent's used-for-variations
+         *     attribute holds the whole option pool ("Blue, Green, Red"),
+         *     which is never a valid per-row value.
+         *  4. The parent's plugin meta key.
+         *
+         * @param WC_Product      $product  Product or variation object.
          * @param WC_Product|null $parent   Parent product or null.
          * @param string          $slug     Attribute slug (without pa_ prefix).
          * @param string          $meta_key Fallback meta key.
          * @return string
          */
         private static function get_attribute_value( $product, $parent, $slug, $meta_key ) {
+                $own = self::get_own_attribute_value( $product, $slug, $meta_key );
+
+                if ( '' !== $own ) {
+                        return $own;
+                }
+
+                if ( null === $parent ) {
+                        return '';
+                }
+
                 $taxonomy = 'pa_' . $slug;
 
-                $ids = array( $product->get_id() );
-                if ( null !== $parent ) {
-                        $ids[] = $parent->get_id();
-                }
-
                 if ( taxonomy_exists( $taxonomy ) ) {
-                        foreach ( $ids as $id ) {
-                                $terms = wc_get_product_terms( $id, $taxonomy, array( 'fields' => 'names' ) );
-                                if ( ! is_wp_error( $terms ) && ! empty( $terms ) ) {
-                                        return (string) $terms[0];
+                        $terms = wc_get_product_terms( $parent->get_id(), $taxonomy, array( 'fields' => 'names' ) );
+
+                        if ( ! is_wp_error( $terms ) && 1 === count( $terms ) ) {
+                                return (string) $terms[0];
+                        }
+                }
+
+                $meta = get_post_meta( $parent->get_id(), $meta_key, true );
+
+                return ( '' !== $meta && null !== $meta ) ? (string) $meta : '';
+        }
+
+        /**
+         * Attribute value living on the object itself (no parent fallback).
+         *
+         * @param WC_Product $product  Product or variation object.
+         * @param string     $slug     Attribute slug (without pa_ prefix).
+         * @param string     $meta_key Fallback meta key.
+         * @return string
+         */
+        private static function get_own_attribute_value( $product, $slug, $meta_key ) {
+                $taxonomy = 'pa_' . $slug;
+
+                /*
+                 * Variations: read the raw attribute meta directly. Keys arrive
+                 * as "pa_color" / "logo" (current WC) or historically as
+                 * "attribute_pa_color" — match any form, then map the stored
+                 * slug to the term label.
+                 */
+                if ( $product->is_type( 'variation' ) ) {
+                        foreach ( (array) $product->get_attributes() as $attr_key => $attr_value ) {
+                                $clean = preg_replace( '/^attribute_/', '', strtolower( (string) $attr_key ) );
+
+                                if ( $clean !== $taxonomy && $clean !== $slug ) {
+                                        continue;
                                 }
+
+                                $raw = trim( (string) $attr_value );
+
+                                if ( '' !== $raw && taxonomy_exists( $taxonomy ) ) {
+                                        return self::normalize_attribute_label( $raw, $taxonomy );
+                                }
+
+                                return $raw;
+                        }
+
+                        // This variation carries no such attribute at all.
+                        $meta = get_post_meta( $product->get_id(), $meta_key, true );
+
+                        return ( '' !== $meta && null !== $meta ) ? (string) $meta : '';
+                }
+
+                /*
+                 * Simple/external products: single taxonomy term or local
+                 * (custom) attribute with a matching name.
+                 */
+                if ( taxonomy_exists( $taxonomy ) ) {
+                        $value = trim( (string) $product->get_attribute( $taxonomy ) );
+
+                        if ( '' !== $value && false === strpos( $value, ',' ) ) {
+                                return self::normalize_attribute_label( $value, $taxonomy );
                         }
                 }
 
-                foreach ( $ids as $id ) {
-                        $meta = get_post_meta( $id, $meta_key, true );
-                        if ( '' !== $meta && null !== $meta ) {
-                                return (string) $meta;
-                        }
+                $value = trim( (string) $product->get_attribute( $slug ) );
+
+                if ( '' !== $value && false === strpos( $value, ',' ) ) {
+                        return $value;
                 }
 
-                return '';
+                // 3) Plugin meta on the object itself.
+                $meta = get_post_meta( $product->get_id(), $meta_key, true );
+
+                return ( '' !== $meta && null !== $meta ) ? (string) $meta : '';
+        }
+
+        /**
+         * Map a raw attribute value (slug or label) to the term label.
+         *
+         * @param string $value    Raw value from WC_Product::get_attribute().
+         * @param string $taxonomy Attribute taxonomy.
+         * @return string
+         */
+        private static function normalize_attribute_label( $value, $taxonomy ) {
+                $term = get_term_by( 'slug', $value, $taxonomy );
+
+                if ( $term && ! is_wp_error( $term ) ) {
+                        return $term->name;
+                }
+
+                return $value;
         }
 
         /**
