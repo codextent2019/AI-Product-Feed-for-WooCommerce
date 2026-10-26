@@ -48,15 +48,25 @@ final class ACPFW_Plugin_Core {
                 add_action( 'init', array( $this, 'load_textdomain' ), 1 );
                 add_filter( 'query_vars', array( $this, 'register_query_vars' ) );
                 add_action( 'init', array( __CLASS__, 'add_rewrite_rules' ) );
+                add_action( 'init', array( __CLASS__, 'maybe_schedule_generation' ) );
                 add_action( 'template_redirect', array( $this, 'maybe_serve_endpoint' ), 1 );
+
+                // Feed generation job runner (Action Scheduler / on-demand).
+                add_action( 'acpfw_generate_feeds', array( 'ACPFW_OpenAI_Feed_Generator', 'generate' ) );
         }
 
         /**
          * Load feature module files. Extended as modules are implemented.
          */
         private function includes() {
-                // Feature modules are required here as they land, so every commit
-                // stays fully installable (feed engine, scoring, discovery, admin).
+                // Feed engine.
+                require_once ACPFW_PLUGIN_DIR . 'includes/Feeds/class-image-resolver.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Feeds/class-product-mapper.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Feeds/class-openai-feed-generator.php';
+
+                // Admin UI.
+                require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-admin-menu.php';
+                new ACPFW_Admin_Menu();
         }
 
         /**
@@ -114,7 +124,9 @@ final class ACPFW_Plugin_Core {
                 $endpoint = get_query_var( 'acpfw_endpoint' );
 
                 if ( ! empty( $endpoint ) ) {
-                        ACPFW_Well_Known_Router::serve( $endpoint );
+                        if ( class_exists( 'ACPFW_Well_Known_Router' ) ) {
+                                ACPFW_Well_Known_Router::serve( $endpoint );
+                        }
                         return;
                 }
 
@@ -131,7 +143,7 @@ final class ACPFW_Plugin_Core {
                         'acpfw-feed/openai.csv'   => 'feed_csv',
                 );
 
-                if ( isset( $map[ $path ] ) ) {
+                if ( isset( $map[ $path ] ) && class_exists( 'ACPFW_Well_Known_Router' ) ) {
                         ACPFW_Well_Known_Router::serve( $map[ $path ] );
                 }
         }
@@ -218,6 +230,21 @@ final class ACPFW_Plugin_Core {
                 $settings = $this->get_settings();
 
                 return ( isset( $settings[ $key ] ) && '' !== $settings[ $key ] ) ? $settings[ $key ] : $fallback;
+        }
+
+        /**
+         * Schedule the daily full feed rebuild via Action Scheduler (bundled with WC).
+         *
+         * @return void
+         */
+        public static function maybe_schedule_generation() {
+                if ( ! function_exists( 'as_schedule_recurring_action' ) || ! function_exists( 'as_next_scheduled_action' ) ) {
+                        return;
+                }
+
+                if ( false === as_next_scheduled_action( 'acpfw_generate_feeds' ) ) {
+                        as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, 'acpfw_generate_feeds', array(), 'acpfw' );
+                }
         }
 
         /**

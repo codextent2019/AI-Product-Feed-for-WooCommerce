@@ -28,6 +28,10 @@ define( 'ACPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'ACPFW_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+// Load the core engine class on every request. Feature modules are loaded
+// through ACPFW_Plugin_Core::includes() on plugins_loaded.
+require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
+
 /**
  * Declare compatibility with WooCommerce feature sets.
  *
@@ -36,13 +40,13 @@ define( 'ACPFW_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
  * endpoints use the WooCommerce order CRUD API exclusively.
  */
 add_action(
-	'before_woocommerce_init',
-	static function () {
-		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
-		}
-	}
+        'before_woocommerce_init',
+        static function () {
+                if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+                        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+                        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
+                }
+        }
 );
 
 /**
@@ -51,12 +55,12 @@ add_action(
  * @return void
  */
 function acpfw_boot() {
-	if ( ! class_exists( 'WooCommerce' ) ) {
-		add_action( 'admin_notices', 'acpfw_woocommerce_missing_notice' );
-		return;
-	}
+        if ( ! class_exists( 'WooCommerce' ) ) {
+                add_action( 'admin_notices', 'acpfw_woocommerce_missing_notice' );
+                return;
+        }
 
-	ACPFW_Plugin_Core::instance();
+        ACPFW_Plugin_Core::instance();
 }
 add_action( 'plugins_loaded', 'acpfw_boot', 11 );
 
@@ -66,14 +70,14 @@ add_action( 'plugins_loaded', 'acpfw_boot', 11 );
  * @return void
  */
 function acpfw_woocommerce_missing_notice() {
-	if ( ! current_user_can( 'activate_plugins' ) ) {
-		return;
-	}
+        if ( ! current_user_can( 'activate_plugins' ) ) {
+                return;
+        }
 
-	printf(
-		'<div class="notice notice-error"><p>%s</p></div>',
-		esc_html__( 'Agentic Commerce & AI Product Feed requires WooCommerce to be installed and active.', 'agentic-commerce-ai-product-feed' )
-	);
+        printf(
+                '<div class="notice notice-error"><p>%s</p></div>',
+                esc_html__( 'Agentic Commerce & AI Product Feed requires WooCommerce to be installed and active.', 'agentic-commerce-ai-product-feed' )
+        );
 }
 
 /**
@@ -82,33 +86,33 @@ function acpfw_woocommerce_missing_notice() {
  * @return void
  */
 function acpfw_activate_plugin() {
-	require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
+        require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
 
-	ACPFW_Plugin_Core::prepare_feed_directory();
+        ACPFW_Plugin_Core::prepare_feed_directory();
 
-	$existing = get_option( 'acpfw_settings', false );
-	if ( false === $existing ) {
-		add_option(
-			'acpfw_settings',
-			array(
-				'seller_name'       => get_bloginfo( 'name' ),
-				'return_policy_url' => '',
-				'shipping_summary'  => '',
-				'default_brand'     => '',
-				'brand_source'      => 'auto',
-				'gtin_source'       => '_global_unique_id',
-				'mpn_source'        => '',
-				'mpn_sku_fallback'  => 'no',
-				'enable_llms_txt'   => 'yes',
-				'enable_acp_json'   => 'yes',
-				'enable_ucp'        => 'yes',
-				'uninstall_cleanup' => 'no',
-			)
-		);
-	}
+        $existing = get_option( 'acpfw_settings', false );
+        if ( false === $existing ) {
+                add_option(
+                        'acpfw_settings',
+                        array(
+                                'seller_name'       => get_bloginfo( 'name' ),
+                                'return_policy_url' => '',
+                                'shipping_summary'  => '',
+                                'default_brand'     => '',
+                                'brand_source'      => 'auto',
+                                'gtin_source'       => '_global_unique_id',
+                                'mpn_source'        => '',
+                                'mpn_sku_fallback'  => 'no',
+                                'enable_llms_txt'   => 'yes',
+                                'enable_acp_json'   => 'yes',
+                                'enable_ucp'        => 'yes',
+                                'uninstall_cleanup' => 'no',
+                        )
+                );
+        }
 
-	ACPFW_Plugin_Core::add_rewrite_rules();
-	flush_rewrite_rules();
+        ACPFW_Plugin_Core::add_rewrite_rules();
+        flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'acpfw_activate_plugin' );
 
@@ -118,12 +122,12 @@ register_activation_hook( __FILE__, 'acpfw_activate_plugin' );
  * @return void
  */
 function acpfw_deactivate_plugin() {
-	if ( function_exists( 'as_unschedule_all_actions' ) ) {
-		as_unschedule_all_actions( 'acpfw_generate_feeds' );
-		as_unschedule_all_actions( 'acpfw_generate_feed_batch' );
-		as_unschedule_all_actions( 'acpfw_delta_feed_sync' );
-	}
+        if ( function_exists( 'as_unschedule_all_actions' ) ) {
+                as_unschedule_all_actions( 'acpfw_generate_feeds' );
+                as_unschedule_all_actions( 'acpfw_generate_feed_batch' );
+                as_unschedule_all_actions( 'acpfw_delta_feed_sync' );
+        }
 
-	flush_rewrite_rules();
+        flush_rewrite_rules();
 }
 register_deactivation_hook( __FILE__, 'acpfw_deactivate_plugin' );
