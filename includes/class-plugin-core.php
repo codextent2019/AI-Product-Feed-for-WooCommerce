@@ -438,6 +438,27 @@ final class ACPFW_Plugin_Core {
                         );
                 }
 
+                // Rate limit: at most one rebuild per minute through this
+                // endpoint, so even a leaked token cannot be used to hammer
+                // the server with repeated full feed generations.
+                $elapsed = time() - (int) get_transient( 'acpfw_cron_rebuild_last' );
+                $minimum = 60;
+
+                if ( $elapsed < $minimum ) {
+                        $remaining = $minimum - $elapsed;
+                        header( 'Retry-After: ' . $remaining );
+                        wp_send_json(
+                                array(
+                                        'ok'          => false,
+                                        'error'       => 'rate_limited',
+                                        'retry_after' => $remaining,
+                                ),
+                                429
+                        );
+                }
+
+                set_transient( 'acpfw_cron_rebuild_last', time(), 2 * $minimum );
+
                 ACPFW_OpenAI_Feed_Generator::generate();
 
                 $stats = ACPFW_OpenAI_Feed_Generator::get_stats();
