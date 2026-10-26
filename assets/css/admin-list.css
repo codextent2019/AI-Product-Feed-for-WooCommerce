@@ -1,0 +1,187 @@
+/**
+ * Agentic AI Feed — products list table ("AI Readiness" column).
+ *
+ * Matches the dashboard design language (WooCommerce purple, soft bands).
+ * The column is intentionally sized so the badge, the score meter and the
+ * Auto-Fix chip each stay on a single line.
+ */
+
+.acpfw-readiness {
+        --acpfw-purple: #7f54b3;
+        --acpfw-purple-dark: #674399;
+        --acpfw-purple-soft: #f3eef9;
+        --acpfw-green: #379a52;
+        --acpfw-amber: #b3821c;
+        --acpfw-red: #cc3333;
+        --acpfw-gray: #6b6e76;
+}
+
+/* ------------------------------------------------------- Column sizing */
+
+.wp-admin .wp-list-table .column-acpfw_readiness {
+        width: 158px;
+        min-width: 140px;
+}
+
+/* -------------------------------------------------- Readiness widget */
+
+.acpfw-readiness {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        max-width: 140px;
+        line-height: 1.3;
+        vertical-align: middle;
+}
+
+/* Line 1 — colored dot + band label */
+.acpfw-readiness__head {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        white-space: nowrap;
+}
+
+.acpfw-readiness__dot {
+        flex: none;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #8c8f97;
+        box-shadow: 0 0 0 3px rgba(140, 143, 151, 0.14);
+}
+
+.acpfw-readiness__label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #6b6e76;
+}
+
+/* Line 2 — thin progress meter + numeric score */
+.acpfw-readiness__meterline {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        white-space: nowrap;
+}
+
+.acpfw-readiness__meter {
+        width: 72px;
+        height: 5px;
+        border-radius: 4px;
+        background: #e6e8ec;
+        overflow: hidden;
+        flex: none;
+}
+
+.acpfw-readiness__meter i {
+        display: block;
+        height: 100%;
+        border-radius: 4px;
+        background: #8c8f97;
+}
+
+.acpfw-readiness__score {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--acpfw-gray, #6b6e76);
+        font-variant-numeric: tabular-nums;
+}
+
+/* Line 3 (score < 80) — Auto-Fix chip */
+.acpfw-readiness__fix {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--acpfw-purple-soft, #f3eef9);
+        color: var(--acpfw-purple-dark, #674399);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.5;
+        text-decoration: none;
+        white-space: nowrap;
+}
+
+.acpfw-readiness__fix .dashicons {
+        font-size: 13px;
+        width: 13px;
+        height: 13px;
+        margin-top: 1px;
+}
+
+.acpfw-readiness__fix:hover,
+.acpfw-readiness__fix:focus {
+        background: var(--acpfw-purple, #7f54b3);
+        color: #fff;
+}
+
+/* ------------------------------------------------------------ Bands */
+
+.acpfw-readiness--ready .acpfw-readiness__dot {
+        background: var(--acpfw-green, #379a52);
+        box-shadow: 0 0 0 3px rgba(55, 154, 82, 0.15);
+}
+
+.acpfw-readiness--ready .acpfw-readiness__label {
+        color: #1f7a3d;
+}
+
+.acpfw-readiness--ready .acpfw-readiness__meter i {
+        background: linear-gradient(90deg, #4cb46a, #379a52);
+}
+
+.acpfw-readiness--polish .acpfw-readiness__dot {
+        background: var(--acpfw-amber, #b3821c);
+        box-shadow: 0 0 0 3px rgba(179, 130, 28, 0.16);
+}
+
+.acpfw-readiness--polish .acpfw-readiness__label {
+        color: #8a6410;
+}
+
+.acpfw-readiness--polish .acpfw-readiness__meter i {
+        background: linear-gradient(90deg, #d9a429, #b3821c);
+}
+
+.acpfw-readiness--blocked .acpfw-readiness__dot {
+        background: var(--acpfw-red, #cc3333);
+        box-shadow: 0 0 0 3px rgba(204, 51, 51, 0.15);
+}
+
+.acpfw-readiness--blocked .acpfw-readiness__label {
+        color: #b3271e;
+}
+
+.acpfw-readiness--blocked .acpfw-readiness__meter i {
+        background: linear-gradient(90deg, #e05248, #cc3333);
+}
+
+/* --------------------------------------------------- Excluded tag */
+
+.acpfw-tag--excluded {
+        display: inline-block;
+        padding: 3px 10px;
+        border: 1px solid #d9dce1;
+        border-radius: 999px;
+        background: #f4f5f7;
+        color: #6b6e76;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+}
+
+/* ------------------------------------------------------ Small screens */
+
+@media screen and (max-width: 782px) {
+        .wp-admin .wp-list-table .column-acpfw_readiness {
+                width: auto;
+                min-width: 0;
+        }
+
+        .acpfw-readiness {
+                max-width: 180px;
+        }
+}

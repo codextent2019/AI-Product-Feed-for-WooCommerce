@@ -285,7 +285,7 @@ final class ACPFW_Admin_Menu {
 
                         <div class="acpfw-hero__actions">
                                 <?php if ( $generated ) : ?>
-                                        <span style="color:rgba(255,255,255,.85);font-size:12.5px;">
+                                        <span class="acpfw-hero__meta">
                                                 <?php
                                                 printf(
                                                         /* translators: 1: number of rows, 2: date */
@@ -388,7 +388,7 @@ final class ACPFW_Admin_Menu {
                                 <span class="acpfw-card__hint"><?php esc_html_e( 'Rebuilds automatically once per day. Submit the JSONL URL to OpenAI Merchant Center / ChatGPT Shopping.', 'agentic-commerce-ai-product-feed' ); ?></span>
                         </div>
                         <div class="acpfw-card__body">
-                                <dl style="margin:0;">
+                                <dl class="acpfw-url-list">
                                         <div class="acpfw-url-row">
                                                 <dt class="acpfw-url-label"><?php esc_html_e( 'OpenAI JSONL feed', 'agentic-commerce-ai-product-feed' ); ?><small><?php esc_html_e( 'Primary feed for ChatGPT Shopping', 'agentic-commerce-ai-product-feed' ); ?></small></dt>
                                                 <dd><input type="text" class="acpfw-url-input" readonly value="<?php echo esc_attr( $jsonl_url ); ?>" onclick="this.select()" /></dd>
@@ -399,14 +399,14 @@ final class ACPFW_Admin_Menu {
                                         </div>
                                 </dl>
 
-                                <p style="margin:18px 0 0;">
+                                <p class="acpfw-card__actions">
                                         <a class="button button-primary acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_generate_feeds' ), 'acpfw_generate_feeds' ) ); ?>">
-                                                <span class="dashicons dashicons-update-alt" style="margin-top:3px;"></span>
+                                                <span class="dashicons dashicons-update-alt"></span>
                                                 <?php $generated ? esc_html_e( 'Regenerate feeds now', 'agentic-commerce-ai-product-feed' ) : esc_html_e( 'Generate feeds now', 'agentic-commerce-ai-product-feed' ); ?>
                                         </a>
 
                                         <?php if ( $generated ) : ?>
-                                                <span style="margin-left:12px;color:#6b6e76;font-size:12.5px;">
+                                                <span class="acpfw-card__meta">
                                                         <?php
                                                         printf(
                                                                 /* translators: 1: number of feed rows, 2: number of products, 3: date/time */
@@ -474,7 +474,7 @@ final class ACPFW_Admin_Menu {
                                 <span class="acpfw-card__hint"><?php esc_html_e( 'Always live at your site root (unless switched off in Settings).', 'agentic-commerce-ai-product-feed' ); ?></span>
                         </div>
                         <div class="acpfw-card__body">
-                                <dl style="margin:0;">
+                                <dl class="acpfw-url-list">
                                         <?php foreach ( $rows as $row ) : ?>
                                                 <div class="acpfw-url-row">
                                                         <dt class="acpfw-url-label"><?php echo esc_html( $row[0] ); ?><small><?php echo esc_html( $row[1] ); ?></small></dt>
@@ -572,13 +572,13 @@ final class ACPFW_Admin_Menu {
                                                 <div class="acpfw-stat acpfw-stat--<?php echo esc_attr( $card[2] ); ?>">
                                                         <div class="acpfw-stat__num"><?php echo esc_html( number_format_i18n( (int) $card[1] ) ); ?></div>
                                                         <div class="acpfw-stat__label"><?php echo esc_html( $card[0] ); ?></div>
-                                                        <div class="acpfw-stat__bar"><span style="width:<?php echo esc_attr( (string) $pct( (int) $card[1] ) ); ?>%;background:var(--acpfw-<?php echo esc_attr( $card[2] ); ?>);"></span></div>
+                                                        <div class="acpfw-stat__bar"><span class="acpfw-stat__fill acpfw-stat__fill--<?php echo esc_attr( $card[2] ); ?>" style="width:<?php echo esc_attr( (string) $pct( (int) $card[1] ) ); ?>%;"></span></div>
                                                 </div>
                                         <?php endforeach; ?>
                                 </div>
 
                                 <?php if ( ! empty( $weak ) ) : ?>
-                                        <p style="margin:6px 0 4px;font-weight:600;font-size:13px;"><?php esc_html_e( 'Lowest-scoring products', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                        <p class="acpfw-weak__heading"><?php esc_html_e( 'Lowest-scoring products', 'agentic-commerce-ai-product-feed' ); ?></p>
                                         <ul class="acpfw-weak">
                                                 <?php foreach ( $weak as $weak_post ) : ?>
                                                         <?php
@@ -586,16 +586,16 @@ final class ACPFW_Admin_Menu {
                                                         $weak_class = ( $weak_score >= 80 ) ? 'green' : ( ( $weak_score >= 50 ) ? 'amber' : 'red' );
                                                         ?>
                                                         <li>
-                                                                <span class="acpfw-weak__score" style="color:var(--acpfw-<?php echo esc_attr( $weak_class ); ?>);"><?php echo esc_html( (string) $weak_score ); ?>/100</span>
+                                                                <span class="acpfw-weak__score acpfw-weak__score--<?php echo esc_attr( $weak_class ); ?>"><?php echo esc_html( (string) $weak_score ); ?>/100</span>
                                                                 <a href="<?php echo esc_url( (string) get_edit_post_link( $weak_post->ID ) ); ?>"><?php echo esc_html( get_the_title( $weak_post ) ); ?></a>
                                                         </li>
                                                 <?php endforeach; ?>
                                         </ul>
                                 <?php endif; ?>
 
-                                <p style="margin:14px 0 0;">
+                                <p class="acpfw-card__actions">
                                         <a class="button acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_rescore_all' ), 'acpfw_rescore_all' ) ); ?>">
-                                                <span class="dashicons dashicons-awards" style="margin-top:3px;"></span>
+                                                <span class="dashicons dashicons-awards"></span>
                                                 <?php esc_html_e( 'Recalculate all product scores', 'agentic-commerce-ai-product-feed' ); ?>
                                         </a>
                                 </p>

@@ -179,7 +179,7 @@ final class ACPFW_Product_Metabox {
         private function render_score_box( $product_id, $score, $issues, $excluded ) {
                 if ( $excluded ) {
                         printf(
-                                '<div class="acpfw-score-box"><span class="acpfw-score-box__num" style="color:#8c8f97;">%1$s</span><span class="acpfw-score-box__meta"><span class="acpfw-score-box__label acpfw-score-box__label--excluded">%2$s</span><span style="font-size:12.5px;color:#6b6e76;">%3$s</span></span></div>',
+                                '<div class="acpfw-score-box"><span class="acpfw-score-box__num acpfw-score-box__num--excluded">%1$s</span><span class="acpfw-score-box__meta"><span class="acpfw-score-box__label acpfw-score-box__label--excluded">%2$s</span><span class="acpfw-score-box__note">%3$s</span></span></div>',
                                 esc_html__( '—', 'agentic-commerce-ai-product-feed' ),
                                 esc_html__( 'Excluded', 'agentic-commerce-ai-product-feed' ),
                                 esc_html__( 'This product is hidden from all AI channels. Uncheck the box below to include it.', 'agentic-commerce-ai-product-feed' )
@@ -197,15 +197,12 @@ final class ACPFW_Product_Metabox {
                 $score = (int) $score;
 
                 if ( $score >= 80 ) {
-                        $color = '#379a52';
                         $label = __( 'AI Ready', 'agentic-commerce-ai-product-feed' );
                         $mod   = 'ready';
                 } elseif ( $score >= 50 ) {
-                        $color = '#b3821c';
                         $label = __( 'Needs Polish', 'agentic-commerce-ai-product-feed' );
                         $mod   = 'polish';
                 } else {
-                        $color = '#cc3333';
                         $label = __( 'AI Blocked', 'agentic-commerce-ai-product-feed' );
                         $mod   = 'blocked';
                 }
@@ -222,7 +219,7 @@ final class ACPFW_Product_Metabox {
                 );
                 ?>
                 <div class="acpfw-score-box">
-                        <span class="acpfw-score-box__num" style="color:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( (string) $score ); ?><small>/100</small></span>
+                        <span class="acpfw-score-box__num acpfw-score-box__num--<?php echo esc_attr( $mod ); ?>"><?php echo esc_html( (string) $score ); ?><small>/100</small></span>
                         <span class="acpfw-score-box__meta">
                                 <span class="acpfw-score-box__label acpfw-score-box__label--<?php echo esc_attr( $mod ); ?>"><?php echo esc_html( $label ); ?></span>
                                 <a href="<?php echo esc_url( $rescore_url ); ?>"><?php esc_html_e( 'Recalculate score', 'agentic-commerce-ai-product-feed' ); ?></a>

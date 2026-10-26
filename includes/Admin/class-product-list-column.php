@@ -8,6 +8,9 @@
  *  - 50-79   amber  "Needs Polish" (+ Auto-Fix affordance)
  *  - 0-49    red    "AI Blocked"  (+ Auto-Fix affordance)
  *
+ * All styling lives in assets/css/admin-list.css, enqueued on the
+ * products list screen only (column width, bands, meter, Auto-Fix chip).
+ *
  * @package ACPFW
  */
 
@@ -29,6 +32,32 @@ final class ACPFW_Product_List_Column {
                 add_filter( 'bulk_actions-edit-product', array( $this, 'add_bulk_action' ), 20 );
                 add_filter( 'handle_bulk_actions-edit-product', array( $this, 'handle_bulk_action' ), 10, 3 );
                 add_action( 'admin_notices', array( $this, 'bulk_notice' ) );
+                add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+        }
+
+        /**
+         * Enqueue the list-table stylesheet on the products screen only.
+         *
+         * @param string $hook Current admin page hook.
+         * @return void
+         */
+        public function enqueue_assets( $hook ) {
+                if ( 'edit.php' !== $hook ) {
+                        return;
+                }
+
+                $screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+                if ( ! $screen || 'product' !== $screen->post_type ) {
+                        return;
+                }
+
+                wp_enqueue_style(
+                        'acpfw-list',
+                        ACPFW_PLUGIN_URL . 'assets/css/admin-list.css',
+                        array(),
+                        ACPFW_VERSION
+                );
         }
 
         /**
@@ -70,7 +99,7 @@ final class ACPFW_Product_List_Column {
                 // Opted-out products show a neutral state instead of a score.
                 if ( 'yes' === get_post_meta( $post_id, '_acpfw_exclude_from_feed', true ) ) {
                         printf(
-                                '<span class="acpfw-badge" style="display:inline-block;padding:2px 9px;border-radius:11px;color:#fff;background:#8c8f94;font-size:12px;" title="%1$s">%2$s</span>',
+                                '<span class="acpfw-tag--excluded" title="%1$s">%2$s</span>',
                                 esc_attr__( 'This product is excluded from all AI feeds and llms.txt.', 'agentic-commerce-ai-product-feed' ),
                                 esc_html__( 'Excluded', 'agentic-commerce-ai-product-feed' )
                         );
@@ -89,13 +118,13 @@ final class ACPFW_Product_List_Column {
                 $score = (int) $score;
 
                 if ( $score >= 80 ) {
-                        $color = '#46b450';
+                        $band  = 'ready';
                         $label = __( 'AI Ready', 'agentic-commerce-ai-product-feed' );
                 } elseif ( $score >= 50 ) {
-                        $color = '#dba617';
+                        $band  = 'polish';
                         $label = __( 'Needs Polish', 'agentic-commerce-ai-product-feed' );
                 } else {
-                        $color = '#dc3232';
+                        $band  = 'blocked';
                         $label = __( 'AI Blocked', 'agentic-commerce-ai-product-feed' );
                 }
 
@@ -114,22 +143,27 @@ final class ACPFW_Product_List_Column {
                         $tooltip = __( 'All readiness checks passed.', 'agentic-commerce-ai-product-feed' );
                 }
 
-                printf(
-                        '<span class="acpfw-badge" style="display:inline-block;padding:2px 9px;border-radius:11px;color:#fff;background:%1$s;font-size:12px;" title="%2$s">%3$s (%4$d/100)</span>',
-                        esc_attr( $color ),
-                        esc_attr( $tooltip ),
-                        esc_html( $label ),
-                        esc_html( $score )
-                );
+                $pct = max( 0, min( 100, $score ) );
+                $fix = '';
 
                 if ( $score < 80 ) {
-                        printf(
-                                '<br /><a href="%1$s" style="text-decoration:none;" title="%2$s">⚡ %3$s</a>',
+                        $fix = sprintf(
+                                '<a class="acpfw-readiness__fix" href="%1$s" title="%2$s"><span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>%3$s</a>',
                                 esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),
                                 esc_attr__( 'One-click AI Auto-Fix is included in the Pro version.', 'agentic-commerce-ai-product-feed' ),
                                 esc_html__( 'Auto-Fix with AI', 'agentic-commerce-ai-product-feed' )
                         );
                 }
+
+                echo '<div class="acpfw-readiness acpfw-readiness--' . esc_attr( $band ) . '" title="' . esc_attr( $tooltip ) . '">';
+                echo '<span class="acpfw-readiness__head"><span class="acpfw-readiness__dot" aria-hidden="true"></span><span class="acpfw-readiness__label">' . esc_html( $label ) . '</span></span>';
+                echo '<span class="acpfw-readiness__meterline"><span class="acpfw-readiness__meter" aria-hidden="true"><i style="width:' . esc_attr( $pct ) . '%;"></i></span><span class="acpfw-readiness__score">' . esc_html( $score ) . '/100</span></span>';
+
+                if ( '' !== $fix ) {
+                        echo $fix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fully escaped when built above.
+                }
+
+                echo '</div>';
         }
 
         /**
@@ -207,7 +241,7 @@ final class ACPFW_Product_List_Column {
          * @return array
          */
         public function add_bulk_action( $actions ) {
-                $actions['acpfw_recalculate'] = __( '⚡ Recalculate AI Readiness Score', 'agentic-commerce-ai-product-feed' );
+                $actions['acpfw_recalculate'] = __( 'Recalculate AI Readiness Score', 'agentic-commerce-ai-product-feed' );
 
                 return $actions;
         }

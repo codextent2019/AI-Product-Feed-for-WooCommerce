@@ -3,59 +3,59 @@
  */
 
 .acpfw-metabox {
-	--acpfw-purple: #7f54b3;
-	--acpfw-purple-soft: #f3eef9;
-	--acpfw-green: #379a52;
-	--acpfw-amber: #b3821c;
-	--acpfw-red: #cc3333;
-	--acpfw-gray: #6b6e76;
-	--acpfw-line: #e2e4e9;
-	max-width: 900px;
+        --acpfw-purple: #7f54b3;
+        --acpfw-purple-soft: #f3eef9;
+        --acpfw-green: #379a52;
+        --acpfw-amber: #b3821c;
+        --acpfw-red: #cc3333;
+        --acpfw-gray: #6b6e76;
+        --acpfw-line: #e2e4e9;
+        max-width: 900px;
 }
 
 /* ------------------------------------------------------------ Score box */
 
 .acpfw-score-box {
-	display: flex;
-	align-items: center;
-	gap: 16px;
-	background: #fafafc;
-	border: 1px solid var(--acpfw-line);
-	border-radius: 8px;
-	padding: 14px 18px;
-	margin: 4px 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: #fafafc;
+        border: 1px solid var(--acpfw-line);
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin: 4px 0 14px;
 }
 
 .acpfw-score-box__num {
-	font-size: 30px;
-	font-weight: 700;
-	line-height: 1;
-	letter-spacing: -0.01em;
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.01em;
 }
 
 .acpfw-score-box__num small {
-	font-size: 13px;
-	font-weight: 500;
-	color: var(--acpfw-gray);
-	margin-left: 2px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--acpfw-gray);
+        margin-left: 2px;
 }
 
 .acpfw-score-box__meta {
-	display: flex;
-	flex-direction: column;
-	gap: 3px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
 }
 
 .acpfw-score-box__label {
-	display: inline-flex;
-	align-self: flex-start;
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: #fff;
-	padding: 3px 10px;
-	border-radius: 20px;
+        display: inline-flex;
+        align-self: flex-start;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #fff;
+        padding: 3px 10px;
+        border-radius: 20px;
 }
 
 .acpfw-score-box__label--ready { background: var(--acpfw-green); }
@@ -63,117 +63,127 @@
 .acpfw-score-box__label--blocked { background: var(--acpfw-red); }
 .acpfw-score-box__label--excluded { background: #8c8f97; }
 
+.acpfw-score-box__num--ready { color: var(--acpfw-green); }
+.acpfw-score-box__num--polish { color: var(--acpfw-amber); }
+.acpfw-score-box__num--blocked { color: var(--acpfw-red); }
+.acpfw-score-box__num--excluded { color: #8c8f97; }
+
+.acpfw-score-box__note {
+        font-size: 12.5px;
+        color: var(--acpfw-gray);
+}
+
 .acpfw-score-box__meta a {
-	font-size: 12px;
-	text-decoration: none;
+        font-size: 12px;
+        text-decoration: none;
 }
 
 /* -------------------------------------------------------------- Issues */
 
 .acpfw-issues {
-	margin: 0 0 14px 4px;
-	padding: 0;
-	list-style: none;
+        margin: 0 0 14px 4px;
+        padding: 0;
+        list-style: none;
 }
 
 .acpfw-issues li {
-	display: flex;
-	align-items: baseline;
-	gap: 8px;
-	padding: 4px 0;
-	font-size: 12.5px;
-	color: #3c434a;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 12.5px;
+        color: #3c434a;
 }
 
 .acpfw-issues li::before {
-	content: "";
-	flex: none;
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	background: var(--acpfw-amber);
-	position: relative;
-	top: -1px;
+        content: "";
+        flex: none;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--acpfw-amber);
+        position: relative;
+        top: -1px;
 }
 
 .acpfw-issues li.acpfw-issue--blocked::before {
-	background: var(--acpfw-red);
+        background: var(--acpfw-red);
 }
 
 .acpfw-all-good {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin: 0 0 14px;
-	padding: 10px 14px;
-	background: #e5f5e9;
-	border-radius: 6px;
-	color: #256c3a;
-	font-size: 12.5px;
-	font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        padding: 10px 14px;
+        background: #e5f5e9;
+        border-radius: 6px;
+        color: #256c3a;
+        font-size: 12.5px;
+        font-weight: 500;
 }
 
 /* -------------------------------------------------------------- Fields */
 
 .acpfw-field {
-	margin: 0 0 16px;
+        margin: 0 0 16px;
 }
 
 .acpfw-field__label {
-	display: block;
-	font-weight: 600;
-	font-size: 12.5px;
-	color: #1d2327;
-	margin-bottom: 5px;
+        display: block;
+        font-weight: 600;
+        font-size: 12.5px;
+        color: #1d2327;
+        margin-bottom: 5px;
 }
 
 .acpfw-field__hint {
-	margin: 4px 0 0;
-	color: var(--acpfw-gray);
-	font-size: 12px;
-	line-height: 1.5;
+        margin: 4px 0 0;
+        color: var(--acpfw-gray);
+        font-size: 12px;
+        line-height: 1.5;
 }
 
 /* ---------------------------------------------------------------- FAQs */
 
 .acpfw-faq-intro {
-	margin: 0 0 10px;
+        margin: 0 0 10px;
 }
 
 .acpfw-faq-rows {
-	margin-bottom: 10px;
+        margin-bottom: 10px;
 }
 
 .acpfw-faq-row {
-	display: grid;
-	grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.6fr) 32px;
-	gap: 8px;
-	margin-bottom: 8px;
-	align-items: stretch;
+        display: grid;
+        grid-template-columns: minmax(160px, 1fr) minmax(220px, 1.6fr) 32px;
+        gap: 8px;
+        margin-bottom: 8px;
+        align-items: stretch;
 }
 
 .acpfw-faq-row input[type="text"],
 .acpfw-faq-row textarea {
-	border-radius: 4px;
-	min-height: 38px;
+        border-radius: 4px;
+        min-height: 38px;
 }
 
 .acpfw-faq-row textarea {
-	resize: vertical;
+        resize: vertical;
 }
 
 .acpfw-faq-row .acpfw-remove-faq {
-	align-self: flex-start;
-	width: 32px;
-	height: 32px;
-	padding: 0;
-	line-height: 30px;
-	border-radius: 4px;
-	font-size: 16px;
+        align-self: flex-start;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        line-height: 30px;
+        border-radius: 4px;
+        font-size: 16px;
 }
 
 @media screen and (max-width: 782px) {
-	.acpfw-faq-row {
-		grid-template-columns: 1fr;
-	}
+        .acpfw-faq-row {
+                grid-template-columns: 1fr;
+        }
 }
