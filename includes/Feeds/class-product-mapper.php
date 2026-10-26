@@ -916,6 +916,44 @@ final class ACPFW_Product_Mapper {
         }
 
         /**
+         * Export-safety counts for a variable product, mirroring exactly
+         * what the feed generator does: a variation only becomes a feed row
+         * when WooCommerce marks it purchasable (which requires a price).
+         * Unpriced variations are silently invisible to the feed, so the
+         * admin UI needs these numbers to explain that gap.
+         *
+         * @param int $product_id Product ID.
+         * @return array {total: int, exportable: int, skipped: int}
+         */
+        public static function get_variation_export_counts( $product_id ) {
+                $counts = array(
+                        'total'      => 0,
+                        'exportable' => 0,
+                        'skipped'    => 0,
+                );
+
+                $product = wc_get_product( absint( $product_id ) );
+
+                if ( ! $product instanceof WC_Product || ! $product->is_type( 'variable' ) ) {
+                        return $counts;
+                }
+
+                foreach ( $product->get_children() as $child_id ) {
+                        $counts['total']++;
+
+                        $variation = wc_get_product( $child_id );
+
+                        if ( $variation instanceof WC_Product && $variation->is_purchasable() ) {
+                                $counts['exportable']++;
+                        } else {
+                                $counts['skipped']++;
+                        }
+                }
+
+                return $counts;
+        }
+
+        /**
          * Map a raw attribute value (slug or label) to the term label.
          *
          * @param string $value    Raw value from WC_Product::get_attribute().

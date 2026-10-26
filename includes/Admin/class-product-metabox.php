@@ -238,6 +238,39 @@ final class ACPFW_Product_Metabox {
                 <?php else : ?>
                         <p class="acpfw-all-good"><?php esc_html_e( 'All readiness checks passed — this product is fully AI Ready.', 'agentic-commerce-ai-product-feed' ); ?></p>
                 <?php endif; ?>
+
+                <?php
+                /*
+                 * Feed-row visibility note: a variable product can score 100
+                 * and carry perfect attributes while most of its variations
+                 * silently vanish from the feed, because WooCommerce marks
+                 * priceless variations non-purchasable and the generator only
+                 * exports purchasable ones. Always surface the numbers.
+                 */
+                $var_counts = ACPFW_Product_Mapper::get_variation_export_counts( $product_id );
+
+                if ( $var_counts['skipped'] > 0 ) {
+                        if ( $var_counts['exportable'] > 0 ) {
+                                $note = sprintf(
+                                        /* translators: 1: skipped variation count, 2: total variation count. */
+                                        __( 'Note: %1$d of your %2$d variations have no price and cannot become feed rows — only purchasable variations are exported. To export them: Variations tab → select all → Bulk actions → Set regular price → Save changes, then click Generate feeds now.', 'agentic-commerce-ai-product-feed' ),
+                                        $var_counts['skipped'],
+                                        $var_counts['total']
+                                );
+                        } else {
+                                $note = sprintf(
+                                        /* translators: %d: total variation count. */
+                                        __( 'Note: none of your %d variations has a price, so this product currently contributes 0 rows to the feed. To fix: Variations tab → select all → Bulk actions → Set regular price → Save changes, then click Generate feeds now.', 'agentic-commerce-ai-product-feed' ),
+                                        $var_counts['total']
+                                );
+                        }
+
+                        printf(
+                                '<p class="acpfw-score-box__note acpfw-score-box__note--warn">%1$s</p>',
+                                esc_html( $note )
+                        );
+                }
+                ?>
                 <?php
         }
 

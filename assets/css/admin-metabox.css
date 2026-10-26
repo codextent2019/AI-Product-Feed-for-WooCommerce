@@ -73,6 +73,12 @@
         color: var(--acpfw-gray);
 }
 
+.acpfw-score-box__note--warn {
+        display: block;
+        margin: 0 0 14px 4px;
+        color: #996800;
+}
+
 .acpfw-score-box__meta a {
         font-size: 12px;
         text-decoration: none;

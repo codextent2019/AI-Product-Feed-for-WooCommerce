@@ -419,7 +419,19 @@ final class ACPFW_LLMS_Txt_Generator {
                         $variation_count = count( $product->get_children() );
 
                         if ( $variation_count > 0 ) {
-                                $lines[] = '- ' . sprintf( /* translators: %d: number of variations */ __( 'Available in %d variants (sizes/colors etc.)', 'agentic-commerce-ai-product-feed' ), $variation_count );
+                                $counts = ACPFW_Product_Mapper::get_variation_export_counts( $product->get_id() );
+
+                                if ( $counts['skipped'] > 0 ) {
+                                        // Never claim more buyable variants than the feed can actually export.
+                                        $lines[] = '- ' . sprintf(
+                                                /* translators: 1: total variations, 2: purchasable variations. */
+                                                __( 'Available in %1$d variants (%2$d purchasable, sizes/colors etc.)', 'agentic-commerce-ai-product-feed' ),
+                                                $variation_count,
+                                                $counts['exportable']
+                                        );
+                                } else {
+                                        $lines[] = '- ' . sprintf( /* translators: %d: number of variations */ __( 'Available in %d variants (sizes/colors etc.)', 'agentic-commerce-ai-product-feed' ), $variation_count );
+                                }
                         }
                 }
 
