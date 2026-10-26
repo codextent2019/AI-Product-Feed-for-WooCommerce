@@ -18,245 +18,256 @@ defined( 'ABSPATH' ) || exit;
  */
 final class ACPFW_Product_List_Column {
 
-	/**
-	 * Constructor.
-	 */
-	public function __construct() {
-		add_filter( 'manage_edit-product_columns', array( $this, 'add_column' ), 20 );
-		add_action( 'manage_product_posts_custom_column', array( $this, 'render_column' ), 10, 2 );
-		add_action( 'restrict_manage_posts', array( $this, 'add_score_filter' ), 20, 2 );
-		add_action( 'pre_get_posts', array( $this, 'apply_score_filter' ) );
-		add_filter( 'bulk_actions-edit-product', array( $this, 'add_bulk_action' ), 20 );
-		add_filter( 'handle_bulk_actions-edit-product', array( $this, 'handle_bulk_action' ), 10, 3 );
-		add_action( 'admin_notices', array( $this, 'bulk_notice' ) );
-	}
+        /**
+         * Constructor.
+         */
+        public function __construct() {
+                add_filter( 'manage_edit-product_columns', array( $this, 'add_column' ), 20 );
+                add_action( 'manage_product_posts_custom_column', array( $this, 'render_column' ), 10, 2 );
+                add_action( 'restrict_manage_posts', array( $this, 'add_score_filter' ), 20, 2 );
+                add_action( 'pre_get_posts', array( $this, 'apply_score_filter' ) );
+                add_filter( 'bulk_actions-edit-product', array( $this, 'add_bulk_action' ), 20 );
+                add_filter( 'handle_bulk_actions-edit-product', array( $this, 'handle_bulk_action' ), 10, 3 );
+                add_action( 'admin_notices', array( $this, 'bulk_notice' ) );
+        }
 
-	/**
-	 * Insert the readiness column right after the product name column.
-	 *
-	 * @param array $columns Existing columns.
-	 * @return array
-	 */
-	public function add_column( $columns ) {
-		$new = array();
+        /**
+         * Insert the readiness column right after the product name column.
+         *
+         * @param array $columns Existing columns.
+         * @return array
+         */
+        public function add_column( $columns ) {
+                $new = array();
 
-		foreach ( $columns as $key => $label ) {
-			$new[ $key ] = $label;
+                foreach ( $columns as $key => $label ) {
+                        $new[ $key ] = $label;
 
-			if ( 'name' === $key ) {
-				$new['acpfw_readiness'] = __( 'AI Readiness', 'agentic-commerce-ai-product-feed' );
-			}
-		}
+                        if ( 'name' === $key ) {
+                                $new['acpfw_readiness'] = __( 'AI Readiness', 'agentic-commerce-ai-product-feed' );
+                        }
+                }
 
-		if ( ! isset( $new['acpfw_readiness'] ) ) {
-			$new['acpfw_readiness'] = __( 'AI Readiness', 'agentic-commerce-ai-product-feed' );
-		}
+                if ( ! isset( $new['acpfw_readiness'] ) ) {
+                        $new['acpfw_readiness'] = __( 'AI Readiness', 'agentic-commerce-ai-product-feed' );
+                }
 
-		return $new;
-	}
+                return $new;
+        }
 
-	/**
-	 * Render the badge for one product row.
-	 *
-	 * @param string $column  Column key.
-	 * @param int    $post_id Product ID.
-	 * @return void
-	 */
-	public function render_column( $column, $post_id ) {
-		if ( 'acpfw_readiness' !== $column ) {
-			return;
-		}
+        /**
+         * Render the badge for one product row.
+         *
+         * @param string $column  Column key.
+         * @param int    $post_id Product ID.
+         * @return void
+         */
+        public function render_column( $column, $post_id ) {
+                if ( 'acpfw_readiness' !== $column ) {
+                        return;
+                }
 
-		$score = get_post_meta( $post_id, '_acpfw_readiness_score', true );
+                // Opted-out products show a neutral state instead of a score.
+                if ( 'yes' === get_post_meta( $post_id, '_acpfw_exclude_from_feed', true ) ) {
+                        printf(
+                                '<span class="acpfw-badge" style="display:inline-block;padding:2px 9px;border-radius:11px;color:#fff;background:#8c8f94;font-size:12px;" title="%1$s">%2$s</span>',
+                                esc_attr__( 'This product is excluded from all AI feeds and llms.txt.', 'agentic-commerce-ai-product-feed' ),
+                                esc_html__( 'Excluded', 'agentic-commerce-ai-product-feed' )
+                        );
 
-		// Lazy first score so existing products light up without a bulk run.
-		if ( '' === $score || null === $score ) {
-			$result = ACPFW_Readiness_Scorer::score_product( $post_id );
-			$score  = $result[0];
-		}
+                        return;
+                }
 
-		$score = (int) $score;
+                $score = get_post_meta( $post_id, '_acpfw_readiness_score', true );
 
-		if ( $score >= 80 ) {
-			$color = '#46b450';
-			$label = __( 'AI Ready', 'agentic-commerce-ai-product-feed' );
-		} elseif ( $score >= 50 ) {
-			$color = '#dba617';
-			$label = __( 'Needs Polish', 'agentic-commerce-ai-product-feed' );
-		} else {
-			$color = '#dc3232';
-			$label = __( 'AI Blocked', 'agentic-commerce-ai-product-feed' );
-		}
+                // Lazy first score so existing products light up without a bulk run.
+                if ( '' === $score || null === $score ) {
+                        $result = ACPFW_Readiness_Scorer::score_product( $post_id );
+                        $score  = $result[0];
+                }
 
-		$issues  = get_post_meta( $post_id, '_acpfw_readiness_issues', true );
-		$tooltip = '';
+                $score = (int) $score;
 
-		if ( is_array( $issues ) && ! empty( $issues ) ) {
-			$messages = array();
+                if ( $score >= 80 ) {
+                        $color = '#46b450';
+                        $label = __( 'AI Ready', 'agentic-commerce-ai-product-feed' );
+                } elseif ( $score >= 50 ) {
+                        $color = '#dba617';
+                        $label = __( 'Needs Polish', 'agentic-commerce-ai-product-feed' );
+                } else {
+                        $color = '#dc3232';
+                        $label = __( 'AI Blocked', 'agentic-commerce-ai-product-feed' );
+                }
 
-			foreach ( $issues as $code ) {
-				$messages[] = ACPFW_Readiness_Scorer::get_issue_message( $code );
-			}
+                $issues  = get_post_meta( $post_id, '_acpfw_readiness_issues', true );
+                $tooltip = '';
 
-			$tooltip = implode( ' • ', $messages );
-		} else {
-			$tooltip = __( 'All readiness checks passed.', 'agentic-commerce-ai-product-feed' );
-		}
+                if ( is_array( $issues ) && ! empty( $issues ) ) {
+                        $messages = array();
 
-		printf(
-			'<span class="acpfw-badge" style="display:inline-block;padding:2px 9px;border-radius:11px;color:#fff;background:%1$s;font-size:12px;" title="%2$s">%3$s (%4$d/100)</span>',
-			esc_attr( $color ),
-			esc_attr( $tooltip ),
-			esc_html( $label ),
-			esc_html( $score )
-		);
+                        foreach ( $issues as $code ) {
+                                $messages[] = ACPFW_Readiness_Scorer::get_issue_message( $code );
+                        }
 
-		if ( $score < 80 ) {
-			printf(
-				'<br /><a href="%1$s" style="text-decoration:none;" title="%2$s">⚡ %3$s</a>',
-				esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),
-				esc_attr__( 'One-click AI Auto-Fix is included in the Pro version.', 'agentic-commerce-ai-product-feed' ),
-				esc_html__( 'Auto-Fix with AI', 'agentic-commerce-ai-product-feed' )
-			);
-		}
-	}
+                        $tooltip = implode( ' • ', $messages );
+                } else {
+                        $tooltip = __( 'All readiness checks passed.', 'agentic-commerce-ai-product-feed' );
+                }
 
-	/**
-	 * Score band filter dropdown above the products table.
-	 *
-	 * @param string $post_type Current list table post type.
-	 * @param string $which     Top or bottom.
-	 * @return void
-	 */
-	public function add_score_filter( $post_type, $which ) {
-		if ( 'product' !== $post_type || 'top' !== $which ) {
-			return;
-		}
+                printf(
+                        '<span class="acpfw-badge" style="display:inline-block;padding:2px 9px;border-radius:11px;color:#fff;background:%1$s;font-size:12px;" title="%2$s">%3$s (%4$d/100)</span>',
+                        esc_attr( $color ),
+                        esc_attr( $tooltip ),
+                        esc_html( $label ),
+                        esc_html( $score )
+                );
 
-		$current = isset( $_GET['acpfw_score_band'] ) ? sanitize_key( wp_unslash( $_GET['acpfw_score_band'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter UI.
-		?>
-		<select name="acpfw_score_band">
-			<option value=""><?php esc_html_e( 'Filter by AI readiness', 'agentic-commerce-ai-product-feed' ); ?></option>
-			<option value="ready" <?php selected( 'ready', $current ); ?>><?php esc_html_e( 'AI Ready (80-100)', 'agentic-commerce-ai-product-feed' ); ?></option>
-			<option value="polish" <?php selected( 'polish', $current ); ?>><?php esc_html_e( 'Needs Polish (50-79)', 'agentic-commerce-ai-product-feed' ); ?></option>
-			<option value="blocked" <?php selected( 'blocked', $current ); ?>><?php esc_html_e( 'AI Blocked (0-49)', 'agentic-commerce-ai-product-feed' ); ?></option>
-		</select>
-		<?php
-	}
+                if ( $score < 80 ) {
+                        printf(
+                                '<br /><a href="%1$s" style="text-decoration:none;" title="%2$s">⚡ %3$s</a>',
+                                esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),
+                                esc_attr__( 'One-click AI Auto-Fix is included in the Pro version.', 'agentic-commerce-ai-product-feed' ),
+                                esc_html__( 'Auto-Fix with AI', 'agentic-commerce-ai-product-feed' )
+                        );
+                }
+        }
 
-	/**
-	 * Apply the score band filter to the products query.
-	 *
-	 * @param WP_Query $query Current query.
-	 * @return void
-	 */
-	public function apply_score_filter( $query ) {
-		if ( ! is_admin() || ! $query->is_main_query() ) {
-			return;
-		}
+        /**
+         * Score band filter dropdown above the products table.
+         *
+         * @param string $post_type Current list table post type.
+         * @param string $which     Top or bottom.
+         * @return void
+         */
+        public function add_score_filter( $post_type, $which ) {
+                if ( 'product' !== $post_type || 'top' !== $which ) {
+                        return;
+                }
 
-		if ( 'product' !== $query->get( 'post_type' ) ) {
-			return;
-		}
+                $current = isset( $_GET['acpfw_score_band'] ) ? sanitize_key( wp_unslash( $_GET['acpfw_score_band'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only filter UI.
+                ?>
+                <select name="acpfw_score_band">
+                        <option value=""><?php esc_html_e( 'Filter by AI readiness', 'agentic-commerce-ai-product-feed' ); ?></option>
+                        <option value="ready" <?php selected( 'ready', $current ); ?>><?php esc_html_e( 'AI Ready (80-100)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                        <option value="polish" <?php selected( 'polish', $current ); ?>><?php esc_html_e( 'Needs Polish (50-79)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                        <option value="blocked" <?php selected( 'blocked', $current ); ?>><?php esc_html_e( 'AI Blocked (0-49)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                </select>
+                <?php
+        }
 
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only admin list filter.
-		if ( ! isset( $_GET['acpfw_score_band'] ) ) {
-			return;
-		}
+        /**
+         * Apply the score band filter to the products query.
+         *
+         * @param WP_Query $query Current query.
+         * @return void
+         */
+        public function apply_score_filter( $query ) {
+                if ( ! is_admin() || ! $query->is_main_query() ) {
+                        return;
+                }
 
-		$band = sanitize_key( wp_unslash( $_GET['acpfw_score_band'] ) );
-		// phpcs:enable
+                if ( 'product' !== $query->get( 'post_type' ) ) {
+                        return;
+                }
 
-		$ranges = array(
-			'ready'   => array( 80, 100 ),
-			'polish'  => array( 50, 79 ),
-			'blocked' => array( 0, 49 ),
-		);
+                // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only admin list filter.
+                if ( ! isset( $_GET['acpfw_score_band'] ) ) {
+                        return;
+                }
 
-		if ( ! isset( $ranges[ $band ] ) ) {
-			return;
-		}
+                $band = sanitize_key( wp_unslash( $_GET['acpfw_score_band'] ) );
+                // phpcs:enable
 
-		$meta_query = (array) $query->get( 'meta_query' );
+                $ranges = array(
+                        'ready'   => array( 80, 100 ),
+                        'polish'  => array( 50, 79 ),
+                        'blocked' => array( 0, 49 ),
+                );
 
-		$meta_query[] = array(
-			'key'     => '_acpfw_readiness_score',
-			'value'   => $ranges[ $band ],
-			'compare' => 'BETWEEN',
-			'type'    => 'NUMERIC',
-		);
+                if ( ! isset( $ranges[ $band ] ) ) {
+                        return;
+                }
 
-		$query->set( 'meta_query', $meta_query ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- intentional admin filter on indexed-free meta.
-	}
+                $meta_query = (array) $query->get( 'meta_query' );
 
-	/**
-	 * Bulk action registration.
-	 *
-	 * @param array $actions Bulk actions.
-	 * @return array
-	 */
-	public function add_bulk_action( $actions ) {
-		$actions['acpfw_recalculate'] = __( '⚡ Recalculate AI Readiness Score', 'agentic-commerce-ai-product-feed' );
+                $meta_query[] = array(
+                        'key'     => '_acpfw_readiness_score',
+                        'value'   => $ranges[ $band ],
+                        'compare' => 'BETWEEN',
+                        'type'    => 'NUMERIC',
+                );
 
-		return $actions;
-	}
+                $query->set( 'meta_query', $meta_query ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- intentional admin filter on indexed-free meta.
+        }
 
-	/**
-	 * Bulk action runner: rescore the selected products.
-	 *
-	 * @param string $redirect_to Redirect URL.
-	 * @param string $doaction    Action slug.
-	 * @param array  $post_ids    Selected product IDs.
-	 * @return string
-	 */
-	public function handle_bulk_action( $redirect_to, $doaction, $post_ids ) {
-		if ( 'acpfw_recalculate' !== $doaction ) {
-			return $redirect_to;
-		}
+        /**
+         * Bulk action registration.
+         *
+         * @param array $actions Bulk actions.
+         * @return array
+         */
+        public function add_bulk_action( $actions ) {
+                $actions['acpfw_recalculate'] = __( '⚡ Recalculate AI Readiness Score', 'agentic-commerce-ai-product-feed' );
 
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			return $redirect_to;
-		}
+                return $actions;
+        }
 
-		$scored = 0;
+        /**
+         * Bulk action runner: rescore the selected products.
+         *
+         * @param string $redirect_to Redirect URL.
+         * @param string $doaction    Action slug.
+         * @param array  $post_ids    Selected product IDs.
+         * @return string
+         */
+        public function handle_bulk_action( $redirect_to, $doaction, $post_ids ) {
+                if ( 'acpfw_recalculate' !== $doaction ) {
+                        return $redirect_to;
+                }
 
-		foreach ( (array) $post_ids as $post_id ) {
-			if ( 'product' !== get_post_type( $post_id ) ) {
-				continue;
-			}
+                if ( ! current_user_can( 'manage_woocommerce' ) ) {
+                        return $redirect_to;
+                }
 
-			ACPFW_Readiness_Scorer::score_product( $post_id );
-			$scored++;
-		}
+                $scored = 0;
 
-		return add_query_arg( 'acpfw_scored', $scored, remove_query_arg( array( 'acpfw_scored' ), $redirect_to ) );
-	}
+                foreach ( (array) $post_ids as $post_id ) {
+                        if ( 'product' !== get_post_type( $post_id ) ) {
+                                continue;
+                        }
 
-	/**
-	 * Success notice after a bulk rescore.
-	 *
-	 * @return void
-	 */
-	public function bulk_notice() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only confirmation banner.
-		if ( ! isset( $_GET['acpfw_scored'] ) ) {
-			return;
-		}
+                        ACPFW_Readiness_Scorer::score_product( $post_id );
+                        $scored++;
+                }
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$scored = absint( $_GET['acpfw_scored'] );
+                return add_query_arg( 'acpfw_scored', $scored, remove_query_arg( array( 'acpfw_scored' ), $redirect_to ) );
+        }
 
-		if ( $scored <= 0 ) {
-			return;
-		}
+        /**
+         * Success notice after a bulk rescore.
+         *
+         * @return void
+         */
+        public function bulk_notice() {
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only confirmation banner.
+                if ( ! isset( $_GET['acpfw_scored'] ) ) {
+                        return;
+                }
 
-		printf(
-			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-			sprintf(
-				/* translators: %d: number of products */
-				esc_html( _n( 'AI Readiness Score recalculated for %d product.', 'AI Readiness Score recalculated for %d products.', $scored, 'agentic-commerce-ai-product-feed' ) ),
-				esc_html( number_format_i18n( $scored ) )
-			)
-		);
-	}
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $scored = absint( $_GET['acpfw_scored'] );
+
+                if ( $scored <= 0 ) {
+                        return;
+                }
+
+                printf(
+                        '<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+                        sprintf(
+                                /* translators: %d: number of products */
+                                esc_html( _n( 'AI Readiness Score recalculated for %d product.', 'AI Readiness Score recalculated for %d products.', $scored, 'agentic-commerce-ai-product-feed' ) ),
+                                esc_html( number_format_i18n( $scored ) )
+                        )
+                );
+        }
 }

@@ -59,7 +59,15 @@ No. Our Coexistence Engine detects if Yoast or Rank Math is managing `/llms.txt`
 
 OpenAI's Commerce Feed spec requires `image_url` to be a direct JPEG or PNG file. If your store serves `.webp` or `.avif` images, ChatGPT Shopping carousels may drop them. Our plugin automatically resolves the underlying JPEG/PNG image for every feed row.
 
+= How do I hide a single product from AI channels? =
+
+Open the product, find the **AI Product Feed (ChatGPT / Agentic)** box, and tick "Exclude this product from all AI feeds and llms.txt output". The product disappears from the JSONL/CSV feeds, llms-full.txt and its list badge switches to *Excluded*.
+
+= Where can I see which AI crawlers are blocked? =
+
+Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI crawler monitor scans your effective robots.txt output for blocks against GPTBot, OAI-SearchBot, ChatGPT-User, PerplexityBot, ClaudeBot, Google-Extended, CCBot and Amazonbot, and live-probes /llms.txt and your feed URL.
+
 == Changelog ==
 
 = 1.0.0 =
-* Initial release: OpenAI ACP product feeds (JSONL/CSV), /llms.txt + /llms-full.txt generators, dual-protocol discovery manifests, AI Readiness Score engine, 3-step setup wizard, and brand/GTIN field mapper.
+* Initial release: OpenAI ACP product feeds (JSONL/CSV), /llms.txt + /llms-full.txt + /llms-commerce.txt generators, dual-protocol discovery manifests, AI Readiness Score engine, 3-step setup checklist, brand/GTIN field mapper, per-product AI feed metabox (brand/availability overrides, exclude toggle, conversational Q&A), AI bot allowlist & crawler monitor, and daily automatic rebuilds.

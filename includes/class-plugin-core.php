@@ -53,6 +53,33 @@ final class ACPFW_Plugin_Core {
 
                 // Feed generation job runner (Action Scheduler / on-demand).
                 add_action( 'acpfw_generate_feeds', array( 'ACPFW_OpenAI_Feed_Generator', 'generate' ) );
+
+                // Prime llms*.txt on first visit after a wipe (cheap on-demand build).
+                add_action( 'init', array( $this, 'maybe_prime_llms_files' ) );
+        }
+
+        /**
+         * Build the llms*.txt files once after activation so the first crawler
+         * hit is served from disk instead of triggering an on-demand rebuild.
+         *
+         * @return void
+         */
+        public function maybe_prime_llms_files() {
+                if ( 'yes' !== $this->get_setting( 'enable_llms_txt', 'yes' ) ) {
+                        return;
+                }
+
+                if ( get_transient( 'acpfw_llms_primed' ) ) {
+                        return;
+                }
+
+                $llms_path = trailingslashit( self::get_feed_directory() ) . ACPFW_LLMS_Txt_Generator::get_llms_filename();
+
+                if ( ! file_exists( $llms_path ) ) {
+                        ACPFW_LLMS_Txt_Generator::generate_all();
+                }
+
+                set_transient( 'acpfw_llms_primed', 1, HOUR_IN_SECONDS );
         }
 
         /**
@@ -68,11 +95,22 @@ final class ACPFW_Plugin_Core {
                 require_once ACPFW_PLUGIN_DIR . 'includes/Scoring/class-readiness-scorer.php';
                 ACPFW_Readiness_Scorer::init();
 
+                // Discovery (llms.txt files + .well-known manifests).
+                require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-llms-txt-generator.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-well-known-router.php';
+
+                // Refresh the llms*.txt files whenever the feeds rebuild.
+                add_action( 'acpfw_feeds_generated', array( 'ACPFW_LLMS_Txt_Generator', 'generate_all' ) );
+
                 // Admin UI.
                 require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-admin-menu.php';
                 require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-product-list-column.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-product-metabox.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-env-checks.php';
                 new ACPFW_Admin_Menu();
                 new ACPFW_Product_List_Column();
+                new ACPFW_Product_Metabox();
+                new ACPFW_Env_Checks();
         }
 
         /**
