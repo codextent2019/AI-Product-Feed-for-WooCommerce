@@ -64,9 +64,15 @@ final class ACPFW_Plugin_Core {
                 require_once ACPFW_PLUGIN_DIR . 'includes/Feeds/class-product-mapper.php';
                 require_once ACPFW_PLUGIN_DIR . 'includes/Feeds/class-openai-feed-generator.php';
 
+                // Scoring.
+                require_once ACPFW_PLUGIN_DIR . 'includes/Scoring/class-readiness-scorer.php';
+                ACPFW_Readiness_Scorer::init();
+
                 // Admin UI.
                 require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-admin-menu.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-product-list-column.php';
                 new ACPFW_Admin_Menu();
+                new ACPFW_Product_List_Column();
         }
 
         /**
