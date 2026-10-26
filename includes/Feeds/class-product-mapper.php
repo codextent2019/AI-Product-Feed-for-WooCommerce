@@ -258,6 +258,8 @@ final class ACPFW_Product_Mapper {
                         $description = (string) $product->get_description();
                 }
                 $description = wp_strip_all_tags( strip_shortcodes( $description ) );
+                // Normalize Windows/Mac line endings so feed consumers get clean \n.
+                $description        = str_replace( array( "\r\n", "\r" ), "\n", $description );
                 $row['description'] = self::truncate( $description, 5000 );
 
                 /*

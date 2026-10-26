@@ -9,13 +9,13 @@
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-	exit;
+        exit;
 }
 
 $acpfw_settings = get_option( 'acpfw_settings', array() );
 
 if ( ! is_array( $acpfw_settings ) || ! isset( $acpfw_settings['uninstall_cleanup'] ) || 'yes' !== $acpfw_settings['uninstall_cleanup'] ) {
-	return; // Default: keep data so a reinstall does not lose mappings/scores.
+        return; // Default: keep data so a reinstall does not lose mappings/scores.
 }
 
 global $wpdb;
@@ -36,9 +36,11 @@ $wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE '\\_acpfw\\_%'"
 /*
  * Scheduled background jobs (Action Scheduler tables when present).
  */
+wp_clear_scheduled_hook( 'acpfw_rebuild_after_product_change' );
+
 $acpfw_as_actions = $wpdb->prefix . 'actionscheduler_actions';
 if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $acpfw_as_actions ) ) === $acpfw_as_actions ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$wpdb->query( "DELETE FROM {$acpfw_as_actions} WHERE hook LIKE 'acpfw\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query( "DELETE FROM {$acpfw_as_actions} WHERE hook LIKE 'acpfw\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 }
 
 /*
@@ -48,16 +50,16 @@ $acpfw_upload_dir = wp_upload_dir();
 $acpfw_feed_dir   = trailingslashit( $acpfw_upload_dir['basedir'] ) . 'acpfw-feeds';
 
 if ( is_dir( $acpfw_feed_dir ) ) {
-	$acpfw_files = (array) glob( $acpfw_feed_dir . '/*' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-	foreach ( $acpfw_files as $acpfw_file ) {
-		if ( is_file( $acpfw_file ) ) {
-			wp_delete_file( $acpfw_file );
-		}
-	}
+        $acpfw_files = (array) glob( $acpfw_feed_dir . '/*' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+        foreach ( $acpfw_files as $acpfw_file ) {
+                if ( is_file( $acpfw_file ) ) {
+                        wp_delete_file( $acpfw_file );
+                }
+        }
 
-	if ( is_dir( $acpfw_feed_dir ) ) {
-		@rmdir( $acpfw_feed_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
-	}
+        if ( is_dir( $acpfw_feed_dir ) ) {
+                @rmdir( $acpfw_feed_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+        }
 }
 
 // Clear the cached rewrite rules for our endpoints.

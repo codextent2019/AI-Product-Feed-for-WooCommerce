@@ -63,6 +63,14 @@ OpenAI's Commerce Feed spec requires `image_url` to be a direct JPEG or PNG file
 
 Open the product, find the **AI Product Feed (ChatGPT / Agentic)** box, and tick "Exclude this product from all AI feeds and llms.txt output". The product disappears from the JSONL/CSV feeds, llms-full.txt and its list badge switches to *Excluded*.
 
+= Where do the Conversational Q&A pairs I add in the product metabox show up? =
+
+They appear in `/llms-full.txt` inside the product block (as "FAQ: question / Answer: ..." lines), so AI assistants can quote them verbatim. They also power the FAQ check of the AI Readiness Score (2+ pairs = full points). The OpenAI JSONL/CSV feed intentionally does not carry them: the OpenAI Commerce Feed spec has no FAQ field, and unknown fields can make a feed row invalid.
+
+= Can I change how often the feeds rebuild? =
+
+Yes. Open **WooCommerce > Agentic AI Feed > Settings** and pick Hourly, Twice a day, Once a day (default), Once a week, or External cron / manual only. There is also a toggle to rebuild automatically whenever product data changes (batched, about a minute after the save), and a secret rebuild URL you can call from a real cron job or uptime monitor.
+
 = Where can I see which AI crawlers are blocked? =
 
 Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI crawler monitor scans your effective robots.txt output for blocks against GPTBot, OAI-SearchBot, ChatGPT-User, PerplexityBot, ClaudeBot, Google-Extended, CCBot and Amazonbot, and live-probes /llms.txt and your feed URL.
@@ -71,3 +79,4 @@ Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI
 
 = 1.0.0 =
 * Initial release: OpenAI ACP product feeds (JSONL/CSV), /llms.txt + /llms-full.txt + /llms-commerce.txt generators, dual-protocol discovery manifests, AI Readiness Score engine, 3-step setup checklist, brand/GTIN field mapper, per-product AI feed metabox (brand/availability overrides, exclude toggle, conversational Q&A), AI bot allowlist & crawler monitor, and daily automatic rebuilds.
+* Product Q&A pairs now surface in llms-full.txt product blocks; configurable rebuild schedule (hourly / twice daily / daily / weekly / external cron with secret URL) plus optional rebuild-on-product-change (debounced); UCP manifest exposes llms-commerce.txt; normalized line endings in feed descriptions.

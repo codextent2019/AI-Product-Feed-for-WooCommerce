@@ -149,10 +149,11 @@ final class ACPFW_Well_Known_Router {
                                 'order_status'   => false,
                         ),
                         'endpoints'    => array(
-                                'catalog_feed' => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
-                                'llms_txt'     => home_url( '/llms.txt' ),
-                                'llms_full'    => home_url( '/llms-full.txt' ),
-                                'last_built'   => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
+                                'catalog_feed'  => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
+                                'llms_txt'      => home_url( '/llms.txt' ),
+                                'llms_full'     => home_url( '/llms-full.txt' ),
+                                'llms_commerce' => home_url( '/llms-commerce.txt' ),
+                                'last_built'    => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
                         ),
                         'updated_at'   => gmdate( 'c' ),
                 );

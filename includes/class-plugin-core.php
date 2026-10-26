@@ -54,6 +54,28 @@ final class ACPFW_Plugin_Core {
                 // Feed generation job runner (Action Scheduler / on-demand).
                 add_action( 'acpfw_generate_feeds', array( 'ACPFW_OpenAI_Feed_Generator', 'generate' ) );
 
+                // Debounced rebuild after product changes + external cron entry point.
+                add_action( 'acpfw_rebuild_after_product_change', array( $this, 'run_update_rebuild' ) );
+                add_action( 'admin_post_nopriv_acpfw_cron_rebuild', array( $this, 'handle_cron_rebuild' ) );
+                add_action( 'admin_post_acpfw_cron_rebuild', array( $this, 'handle_cron_rebuild' ) );
+
+                $product_change_hooks = array(
+                        'woocommerce_new_product',
+                        'woocommerce_update_product',
+                        'woocommerce_delete_product',
+                        'woocommerce_trash_product',
+                        'woocommerce_untrash_product',
+                        'woocommerce_new_product_variation',
+                        'woocommerce_update_product_variation',
+                        'woocommerce_delete_product_variation',
+                        'woocommerce_product_set_stock',
+                        'woocommerce_variation_set_stock',
+                );
+
+                foreach ( $product_change_hooks as $product_change_hook ) {
+                        add_action( $product_change_hook, array( $this, 'queue_update_rebuild' ) );
+                }
+
                 // Prime llms*.txt on first visit after a wipe (cheap on-demand build).
                 add_action( 'init', array( $this, 'maybe_prime_llms_files' ) );
         }
@@ -254,6 +276,9 @@ final class ACPFW_Plugin_Core {
                                 'gtin_source'       => '_global_unique_id',
                                 'mpn_source'        => '',
                                 'mpn_sku_fallback'  => 'no',
+                                'rebuild_schedule'  => 'daily',
+                                'rebuild_on_update' => 'no',
+                                'cron_token'        => '',
                                 'enable_llms_txt'   => 'yes',
                                 'enable_acp_json'   => 'yes',
                                 'enable_ucp'        => 'yes',
@@ -291,7 +316,10 @@ final class ACPFW_Plugin_Core {
         }
 
         /**
-         * Schedule the daily full feed rebuild via Action Scheduler (bundled with WC).
+         * Schedule the recurring full feed rebuild via Action Scheduler (bundled with WC).
+         *
+         * Honors the "rebuild_schedule" setting; in "external" mode the built-in
+         * scheduler is disabled so only the secret rebuild URL triggers runs.
          *
          * @return void
          */
@@ -300,9 +328,142 @@ final class ACPFW_Plugin_Core {
                         return;
                 }
 
-                if ( false === as_next_scheduled_action( 'acpfw_generate_feeds' ) ) {
-                        as_schedule_recurring_action( time() + HOUR_IN_SECONDS, DAY_IN_SECONDS, 'acpfw_generate_feeds', array(), 'acpfw' );
+                // External cron mode: never self-schedule, drop any stale event.
+                if ( 'external' === acpfw()->get_setting( 'rebuild_schedule', 'daily' ) ) {
+                        if ( function_exists( 'as_unschedule_all_actions' ) ) {
+                                as_unschedule_all_actions( 'acpfw_generate_feeds', array(), 'acpfw' );
+                        }
+
+                        return;
                 }
+
+                if ( false === as_next_scheduled_action( 'acpfw_generate_feeds' ) ) {
+                        as_schedule_recurring_action( time() + HOUR_IN_SECONDS, self::rebuild_interval(), 'acpfw_generate_feeds', array(), 'acpfw' );
+                }
+        }
+
+        /**
+         * Interval in seconds for the automatic rebuild, from the schedule setting.
+         *
+         * @return int
+         */
+        public static function rebuild_interval() {
+                $map = array(
+                        'hourly'     => HOUR_IN_SECONDS,
+                        'twicedaily' => 12 * HOUR_IN_SECONDS,
+                        'daily'      => DAY_IN_SECONDS,
+                        'weekly'     => WEEK_IN_SECONDS,
+                );
+
+                $mode = acpfw()->get_setting( 'rebuild_schedule', 'daily' );
+
+                return isset( $map[ $mode ] ) ? (int) $map[ $mode ] : DAY_IN_SECONDS;
+        }
+
+        /**
+         * Re-sync the recurring rebuild after the schedule setting changes.
+         *
+         * @return void
+         */
+        public static function reschedule_generation() {
+                if ( ! function_exists( 'as_unschedule_all_actions' ) || ! function_exists( 'as_schedule_recurring_action' ) ) {
+                        return;
+                }
+
+                as_unschedule_all_actions( 'acpfw_generate_feeds', array(), 'acpfw' );
+                self::maybe_schedule_generation();
+        }
+
+        /**
+         * Queue a debounced rebuild after a product create/update/delete.
+         *
+         * Called from woocommerce_*_product hooks. Batches burst saves (bulk
+         * edits, imports) into ONE WP-Cron run about a minute later; the feed
+         * write itself is atomic so crawlers never see a partial file.
+         *
+         * @param mixed $product Product ID / object from the hook (unused).
+         * @return void
+         */
+        public function queue_update_rebuild( $product = 0 ) {
+                unset( $product );
+
+                if ( 'yes' !== $this->get_setting( 'rebuild_on_update', 'no' ) ) {
+                        return;
+                }
+
+                // Debounce: skip while a rebuild is already queued.
+                $pending = (int) get_option( 'acpfw_rebuild_pending', 0 );
+
+                if ( $pending > time() ) {
+                        return;
+                }
+
+                wp_schedule_single_event( time() + MINUTE_IN_SECONDS, 'acpfw_rebuild_after_product_change' );
+                update_option( 'acpfw_rebuild_pending', time() + 2 * MINUTE_IN_SECONDS, false );
+        }
+
+        /**
+         * Runner for the debounced product-change rebuild.
+         *
+         * @return void
+         */
+        public function run_update_rebuild() {
+                delete_option( 'acpfw_rebuild_pending' );
+                ACPFW_OpenAI_Feed_Generator::generate();
+        }
+
+        /**
+         * External cron entry point: admin-post.php?action=acpfw_cron_rebuild&token=…
+         *
+         * Authenticated by the stored cron token (never by user sessions), so
+         * real cron jobs / uptime monitors can trigger a full rebuild.
+         *
+         * @return void
+         */
+        public function handle_cron_rebuild() {
+                $token  = isset( $_GET['token'] ) ? sanitize_key( wp_unslash( $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
+                $stored = (string) $this->get_setting( 'cron_token', '' );
+
+                if ( '' === $stored || '' === $token || ! hash_equals( $stored, $token ) ) {
+                        wp_die(
+                                esc_html__( 'Invalid rebuild token.', 'agentic-commerce-ai-product-feed' ),
+                                '',
+                                array( 'response' => 403 )
+                        );
+                }
+
+                ACPFW_OpenAI_Feed_Generator::generate();
+
+                $stats = ACPFW_OpenAI_Feed_Generator::get_stats();
+
+                wp_send_json(
+                        array(
+                                'ok'       => true,
+                                'rows'     => isset( $stats['rows'] ) ? (int) $stats['rows'] : 0,
+                                'built_at' => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : gmdate( 'c' ),
+                        )
+                );
+        }
+
+        /**
+         * Lazily create + persist the external cron token (32 hex chars).
+         *
+         * @return string
+         */
+        public function get_cron_token() {
+                $token = (string) $this->get_setting( 'cron_token', '' );
+
+                if ( '' === $token ) {
+                        $token = bin2hex( random_bytes( 16 ) );
+
+                        $settings = $this->get_settings();
+                        $settings['cron_token'] = $token;
+
+                        update_option( 'acpfw_settings', $settings, false );
+                        $this->settings = $settings;
+                }
+
+                return $token;
         }
 
         /**

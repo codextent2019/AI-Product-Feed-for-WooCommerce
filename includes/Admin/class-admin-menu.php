@@ -33,6 +33,7 @@ final class ACPFW_Admin_Menu {
                 add_action( 'admin_post_acpfw_generate_feeds', array( $this, 'handle_generate' ) );
                 add_action( 'admin_post_acpfw_save_settings', array( $this, 'handle_save_settings' ) );
                 add_action( 'admin_post_acpfw_rescore_all', array( $this, 'handle_rescore_all' ) );
+                add_action( 'admin_post_acpfw_regen_cron_token', array( $this, 'handle_regen_cron_token' ) );
                 add_action( 'admin_notices', array( $this, 'action_notices' ) );
         }
 
@@ -124,8 +125,18 @@ final class ACPFW_Admin_Menu {
                         'enable_acp_json'   => ( isset( $_POST['enable_acp_json'] ) && 'yes' === $_POST['enable_acp_json'] ) ? 'yes' : 'no',
                         'enable_ucp'        => ( isset( $_POST['enable_ucp'] ) && 'yes' === $_POST['enable_ucp'] ) ? 'yes' : 'no',
                         'uninstall_cleanup' => ( isset( $_POST['uninstall_cleanup'] ) && 'yes' === $_POST['uninstall_cleanup'] ) ? 'yes' : 'no',
+                        'rebuild_schedule'  => isset( $_POST['rebuild_schedule'] ) ? sanitize_key( wp_unslash( $_POST['rebuild_schedule'] ) ) : 'daily',
+                        'rebuild_on_update' => ( isset( $_POST['rebuild_on_update'] ) && 'yes' === $_POST['rebuild_on_update'] ) ? 'yes' : 'no',
+                        // Never blank the cron token: it is managed by its own handler.
+                        'cron_token'        => (string) acpfw()->get_setting( 'cron_token', '' ),
                 );
                 // phpcs:enable
+
+                $schedules = array( 'hourly', 'twicedaily', 'daily', 'weekly', 'external' );
+
+                if ( ! in_array( $settings['rebuild_schedule'], $schedules, true ) ) {
+                        $settings['rebuild_schedule'] = 'daily';
+                }
 
                 // Keep seller name in sync with the blog name unless customized.
                 if ( '' === $settings['seller_name'] ) {
@@ -144,6 +155,14 @@ final class ACPFW_Admin_Menu {
                         ACPFW_LLMS_Txt_Generator::generate_all();
                 }
 
+                // Apply the new rebuild schedule; drop the change-queue when off.
+                ACPFW_Plugin_Core::reschedule_generation();
+
+                if ( 'yes' !== acpfw()->get_setting( 'rebuild_on_update', 'no' ) ) {
+                        wp_clear_scheduled_hook( 'acpfw_rebuild_after_product_change' );
+                        delete_option( 'acpfw_rebuild_pending' );
+                }
+
                 wp_safe_redirect(
                         add_query_arg(
                                 array(
@@ -152,6 +171,36 @@ final class ACPFW_Admin_Menu {
                                 ),
                                 admin_url( 'admin.php' )
                         )
+                );
+                exit;
+        }
+
+        /**
+         * Regenerate the external-cron rebuild token (admin-post).
+         *
+         * @return void
+         */
+        public function handle_regen_cron_token() {
+                if ( ! current_user_can( 'manage_woocommerce' ) ) {
+                        wp_die( esc_html__( 'You are not allowed to manage settings.', 'agentic-commerce-ai-product-feed' ) );
+                }
+
+                check_admin_referer( 'acpfw_regen_cron_token' );
+
+                $settings = acpfw()->get_settings();
+                $settings['cron_token'] = bin2hex( random_bytes( 16 ) );
+
+                update_option( 'acpfw_settings', $settings, false );
+                acpfw()->refresh_settings();
+
+                wp_safe_redirect(
+                        add_query_arg(
+                                array(
+                                        'page'         => 'acpfw-feed',
+                                        'acpfw_notice' => 'cron_token',
+                                ),
+                                admin_url( 'admin.php' )
+                        ) . '#acpfw-settings'
                 );
                 exit;
         }
@@ -201,6 +250,7 @@ final class ACPFW_Admin_Menu {
                         'generated'      => __( 'Feeds and AI discovery files generated successfully.', 'agentic-commerce-ai-product-feed' ),
                         'settings_saved' => __( 'Settings saved. AI discovery files refreshed.', 'agentic-commerce-ai-product-feed' ),
                         'env_rechecked'  => __( 'AI crawler checks re-run.', 'agentic-commerce-ai-product-feed' ),
+                        'cron_token'     => __( 'A new external cron rebuild token was generated. Update your cron job URL if it calls the old one.', 'agentic-commerce-ai-product-feed' ),
                 );
 
                 if ( 'rescored' === $notice ) {
@@ -385,7 +435,18 @@ final class ACPFW_Admin_Menu {
                 <section class="acpfw-card acpfw-section-anchor" id="acpfw-feeds">
                         <div class="acpfw-card__header">
                                 <h2 class="acpfw-card__title"><span class="dashicons dashicons-database-export"></span><?php esc_html_e( 'Product feeds', 'agentic-commerce-ai-product-feed' ); ?></h2>
-                                <span class="acpfw-card__hint"><?php esc_html_e( 'Rebuilds automatically once per day. Submit the JSONL URL to OpenAI Merchant Center / ChatGPT Shopping.', 'agentic-commerce-ai-product-feed' ); ?></span>
+                                <?php
+                                $schedule_labels = array(
+                                        'hourly'     => __( 'hourly', 'agentic-commerce-ai-product-feed' ),
+                                        'twicedaily' => __( 'twice a day', 'agentic-commerce-ai-product-feed' ),
+                                        'daily'      => __( 'once a day', 'agentic-commerce-ai-product-feed' ),
+                                        'weekly'     => __( 'once a week', 'agentic-commerce-ai-product-feed' ),
+                                        'external'   => __( 'via external cron', 'agentic-commerce-ai-product-feed' ),
+                                );
+                                $rebuild_mode    = (string) acpfw()->get_setting( 'rebuild_schedule', 'daily' );
+                                $rebuild_label   = isset( $schedule_labels[ $rebuild_mode ] ) ? $schedule_labels[ $rebuild_mode ] : $schedule_labels['daily'];
+                                ?>
+                                <span class="acpfw-card__hint"><?php printf( /* translators: %s: rebuild frequency, e.g. "once a day" */ esc_html__( 'Rebuilds automatically %s (change in Settings). Submit the JSONL URL to OpenAI Merchant Center / ChatGPT Shopping.', 'agentic-commerce-ai-product-feed' ), esc_html( $rebuild_label ) ); ?></span>
                         </div>
                         <div class="acpfw-card__body">
                                 <dl class="acpfw-url-list">
@@ -611,6 +672,13 @@ final class ACPFW_Admin_Menu {
          */
         private function render_settings_section() {
                 $settings = acpfw()->get_settings();
+                $cron_url = add_query_arg(
+                        array(
+                                'action' => 'acpfw_cron_rebuild',
+                                'token'  => acpfw()->get_cron_token(),
+                        ),
+                        admin_url( 'admin-post.php' )
+                );
                 ?>
                 <section class="acpfw-card acpfw-section-anchor" id="acpfw-settings">
                         <div class="acpfw-card__header">
@@ -688,6 +756,37 @@ final class ACPFW_Admin_Menu {
                                                                         <label><input type="checkbox" name="enable_llms_txt" value="yes" <?php checked( 'yes', (string) $settings['enable_llms_txt'] ); ?> /> <?php esc_html_e( 'Serve /llms.txt, /llms-full.txt and /llms-commerce.txt', 'agentic-commerce-ai-product-feed' ); ?></label>
                                                                         <label><input type="checkbox" name="enable_acp_json" value="yes" <?php checked( 'yes', (string) $settings['enable_acp_json'] ); ?> /> <?php esc_html_e( 'Serve /.well-known/acp.json (ACP manifest)', 'agentic-commerce-ai-product-feed' ); ?></label>
                                                                         <label><input type="checkbox" name="enable_ucp" value="yes" <?php checked( 'yes', (string) $settings['enable_ucp'] ); ?> /> <?php esc_html_e( 'Serve /.well-known/ucp (UCP manifest)', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                                                </td>
+                                                        </tr>
+                                                        <tr>
+                                                                <th scope="row"><label for="acpfw-rebuild-schedule"><?php esc_html_e( 'Automatic rebuild', 'agentic-commerce-ai-product-feed' ); ?></label></th>
+                                                                <td>
+                                                                        <select id="acpfw-rebuild-schedule" name="rebuild_schedule">
+                                                                                <option value="hourly" <?php selected( 'hourly', (string) $settings['rebuild_schedule'] ); ?>><?php esc_html_e( 'Hourly', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                                                                <option value="twicedaily" <?php selected( 'twicedaily', (string) $settings['rebuild_schedule'] ); ?>><?php esc_html_e( 'Twice a day', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                                                                <option value="daily" <?php selected( 'daily', (string) $settings['rebuild_schedule'] ); ?>><?php esc_html_e( 'Once a day (default)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                                                                <option value="weekly" <?php selected( 'weekly', (string) $settings['rebuild_schedule'] ); ?>><?php esc_html_e( 'Once a week', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                                                                <option value="external" <?php selected( 'external', (string) $settings['rebuild_schedule'] ); ?>><?php esc_html_e( 'External cron / manual only', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                                                        </select>
+                                                                        <p class="description"><?php esc_html_e( 'How often WordPress rebuilds the product feeds and llms.txt files. "External cron / manual only" switches off the built-in scheduler and waits for the rebuild URL below.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                                                </td>
+                                                        </tr>
+                                                        <tr>
+                                                                <th scope="row"><?php esc_html_e( 'Rebuild on product changes', 'agentic-commerce-ai-product-feed' ); ?></th>
+                                                                <td>
+                                                                        <label>
+                                                                                <input type="checkbox" name="rebuild_on_update" value="yes" <?php checked( 'yes', (string) $settings['rebuild_on_update'] ); ?> />
+                                                                                <?php esc_html_e( 'Also rebuild automatically whenever product data changes (price, stock, name, Q&A, brand override, etc.)', 'agentic-commerce-ai-product-feed' ); ?>
+                                                                        </label>
+                                                                        <p class="description"><?php esc_html_e( 'Rebuilds are batched: they run about a minute after the last product save (via WP-Cron), so bulk edits and imports stay fast.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                                                </td>
+                                                        </tr>
+                                                        <tr>
+                                                                <th scope="row"><label for="acpfw-cron-url"><?php esc_html_e( 'External cron rebuild URL', 'agentic-commerce-ai-product-feed' ); ?></label></th>
+                                                                <td>
+                                                                        <input type="text" id="acpfw-cron-url" class="regular-text" readonly value="<?php echo esc_attr( $cron_url ); ?>" onclick="this.select()" />
+                                                                        <a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_regen_cron_token' ), 'acpfw_regen_cron_token' ) ); ?>"><?php esc_html_e( 'Regenerate token', 'agentic-commerce-ai-product-feed' ); ?></a>
+                                                                        <p class="description"><?php esc_html_e( 'Call this URL from a real cron job or uptime monitor (e.g. hourly) to rebuild feeds + llms.txt on demand. It works with the "External cron / manual only" schedule, but is available in every mode. Anyone with this URL can trigger a rebuild — keep it secret.', 'agentic-commerce-ai-product-feed' ); ?></p>
                                                                 </td>
                                                         </tr>
                                                         <tr>

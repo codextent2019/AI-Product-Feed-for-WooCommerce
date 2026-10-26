@@ -313,7 +313,7 @@ final class ACPFW_LLMS_Txt_Generator {
                                 wp_date( get_option( 'date_format' ) ),
                                 '' !== $currency ? $currency : __( 'store currency', 'agentic-commerce-ai-product-feed' )
                         ) . "\n\n"
-                        . __( 'Format: each product lists its URL, price, availability, brand and a short description. Visit the product URL for the live page.', 'agentic-commerce-ai-product-feed' ) . "\n\n";
+                        . __( 'Format: each product lists its URL, price, availability, brand, a short description and store-provided Q&A when available. Visit the product URL for the live page.', 'agentic-commerce-ai-product-feed' ) . "\n\n";
 
                 fwrite( $handle, $header ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
 
@@ -434,6 +434,39 @@ final class ACPFW_LLMS_Txt_Generator {
                 if ( '' !== $description ) {
                         $lines[] = '';
                         $lines[] = self::clean( $description, 400 );
+                }
+
+                // Conversational Q&A written in the product metabox — exactly the
+                // content AI assistants quote when shoppers ask questions.
+                $faqs = get_post_meta( $product_id, '_acpfw_faqs', true );
+
+                if ( is_array( $faqs ) && ! empty( $faqs ) ) {
+                        $shown = 0;
+
+                        foreach ( $faqs as $faq ) {
+                                if ( $shown >= 5 ) {
+                                        break;
+                                }
+
+                                if ( ! is_array( $faq ) ) {
+                                        continue;
+                                }
+
+                                $q = isset( $faq['q'] ) ? self::clean( (string) $faq['q'], 200 ) : '';
+                                $a = isset( $faq['a'] ) ? self::clean( (string) $faq['a'], 400 ) : '';
+
+                                if ( '' === $q || '' === $a ) {
+                                        continue;
+                                }
+
+                                if ( 0 === $shown ) {
+                                        $lines[] = '';
+                                }
+
+                                $lines[] = '- ' . __( 'FAQ', 'agentic-commerce-ai-product-feed' ) . ': ' . $q;
+                                $lines[] = '  ' . __( 'Answer', 'agentic-commerce-ai-product-feed' ) . ': ' . $a;
+                                $shown++;
+                        }
                 }
 
                 $lines[] = '';
