@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt
+ * Plugin Name: Agentic Commerce & AI Product Feed
  * Plugin URI:  https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce
  * Description: Generate OpenAI ACP & ChatGPT Shopping product feeds (JSONL/CSV), UCP/ACP discovery manifests, /llms.txt + /llms-full.txt, and per-product AI Readiness Scores. 100% self-hosted — unlimited products, no external SaaS.
  * Version:     1.0.0
@@ -47,6 +47,32 @@ add_action(
                         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
                         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', __FILE__, true );
                 }
+        }
+);
+
+/**
+ * Quick-action links on the Plugins screen, rendered next to "Deactivate".
+ *
+ * "AI Feed Hub" opens the plugin dashboard; "AI Readiness Score" opens the
+ * product table with the readiness badge column.
+ */
+add_filter(
+        'plugin_action_links_' . ACPFW_PLUGIN_BASENAME,
+        static function ( array $links ) {
+                $custom_links = array(
+                        'settings' => sprintf(
+                                '<a href="%s" style="font-weight:600;color:#2271b1;">%s</a>',
+                                esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),
+                                esc_html__( 'AI Feed Hub', 'agentic-commerce-ai-product-feed' )
+                        ),
+                        'audit'    => sprintf(
+                                '<a href="%s">%s</a>',
+                                esc_url( admin_url( 'edit.php?post_type=product' ) ),
+                                esc_html__( 'AI Readiness Score', 'agentic-commerce-ai-product-feed' )
+                        ),
+                );
+
+                return array_merge( $custom_links, $links );
         }
 );
 

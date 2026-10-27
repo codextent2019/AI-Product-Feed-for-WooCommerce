@@ -1,4 +1,4 @@
-=== Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt ===
+=== Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT, ACP, UCP & LLMs.txt ===
 Contributors: codextent2019
 Tags: agentic-commerce, product feed, acp, ucp, llms.txt
 Requires at least: 6.2
