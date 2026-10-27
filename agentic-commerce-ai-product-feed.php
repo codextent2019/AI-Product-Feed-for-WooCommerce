@@ -3,7 +3,7 @@
  * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce
  * Plugin URI:  https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce
  * Description: Generate OpenAI ACP & ChatGPT Shopping product feeds (JSONL/CSV), UCP/ACP discovery manifests, /llms.txt + /llms-full.txt, and per-product AI Readiness Scores. 100% self-hosted — unlimited products, no external SaaS.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      codextent2019
  * Author URI:  https://github.com/codextent2019
  * License:     GPL-2.0-or-later
@@ -23,7 +23,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Core constants.
-define( 'ACPFW_VERSION', '1.0.1' );
+define( 'ACPFW_VERSION', '1.0.2' );
 define( 'ACPFW_PLUGIN_FILE', __FILE__ );
 define( 'ACPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

@@ -7,7 +7,7 @@ Requires PHP: 7.4
 Requires Plugins: woocommerce
 WC requires at least: 7.6
 WC tested up to: 11.0
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,13 +78,18 @@ Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI
 
 == Changelog ==
 
+= 1.0.2 =
+* CSV feeds now begin with a UTF-8 BOM so Excel renders em dashes and accented characters correctly instead of "â€""-style mojibake (without a BOM, Excel assumes Windows-1252); feed consumers strip the BOM automatically, and the JSONL feed stays BOM-free for strict JSON parsers.
+
+= 1.0.1 =
+* Variation export counts are now visible: the product metabox shows an amber note when some (or all) variations have no price and therefore cannot become feed rows (WooCommerce marks unpriced variations non-purchasable, and only purchasable variations are exported), with the exact bulk-price fix; llms-full.txt now reports "Available in N variants (M purchasable)" instead of overstating the buyable variant count.
+
 = 1.0.0 =
 * Initial release: OpenAI ACP product feeds (JSONL/CSV), /llms.txt + /llms-full.txt + /llms-commerce.txt generators, dual-protocol discovery manifests, AI Readiness Score engine, 3-step setup checklist, brand/GTIN field mapper, per-product AI feed metabox (brand/availability overrides, exclude toggle, conversational Q&A), AI bot allowlist & crawler monitor, and daily automatic rebuilds.
 * Product Q&A pairs now surface in llms-full.txt product blocks; configurable rebuild schedule (hourly / twice daily / daily / weekly / external cron with secret URL) plus optional rebuild-on-product-change (debounced); UCP manifest exposes llms-commerce.txt; normalized line endings in feed descriptions.
 * Readiness ATTRS check: the issue message now names exactly which structured attributes the product has and which are missing instead of a generic static string; scorer now also credits non-variation attributes defined on the parent product (e.g. Material) for variable products, mirroring what feed rows emit; Gender and Age group values like "Male"/"Adult" are case-normalized to the spec enums (male/female/unisex, newborn/infant/toddler/kids/adult) in both scoring and feeds.
 * External cron rebuild endpoint hardened: explicit no-cache headers, ignore_user_abort, and a 1-rebuild-per-minute rate limit (HTTP 429 + Retry-After) as defense-in-depth against a leaked token.
 * Attribute detection rewritten as a unified resolver for simple / variable / variation / affiliate products: reads WC_Product_Attribute objects directly (no legacy get_attribute() quirks or comma-value false rejections), joins multiple values as "Blue/Green" per the merchant-center convention, and applies the same single-value parent rule in scoring as in feed rows; readiness message now adds an actionable note when an attribute exists but its values cannot reach feed rows (option pool or per-variation values never saved).
-* Variation export counts are now visible: the product metabox shows an amber note when some (or all) variations have no price and therefore cannot become feed rows (WooCommerce marks unpriced variations non-purchasable, and only purchasable variations are exported), with the exact bulk-price fix; llms-full.txt now reports "Available in N variants (M purchasable)" instead of overstating the buyable variant count.
 
 = 1.0.1 =
 * Duplicate-variant guard: variations that resolve to the same title + deep-link URL (identical option combinations) are exported once per group, as OpenAI expects unique option sets.

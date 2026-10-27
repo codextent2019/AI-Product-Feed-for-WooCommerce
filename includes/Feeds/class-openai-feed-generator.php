@@ -102,6 +102,12 @@ final class ACPFW_OpenAI_Feed_Generator {
                         );
                 }
 
+                // UTF-8 BOM on the CSV only: without it Excel assumes Windows-1252
+                // and renders multibyte characters (e.g. an em dash —) as mojibake
+                // like "â€"". The BOM is valid UTF-8 and is stripped by feed
+                // consumers; the JSONL file stays BOM-free for strict JSON parsers.
+                fwrite( $csv_handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+
                 // CSV header. All five fputcsv arguments are passed explicitly:
                 // omitting $escape triggers a deprecation on PHP 8.4+.
                 $columns = ACPFW_Product_Mapper::csv_columns();
