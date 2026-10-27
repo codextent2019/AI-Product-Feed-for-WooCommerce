@@ -33,6 +33,9 @@ define( 'ACPFW_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 // through ACPFW_Plugin_Core::includes() on plugins_loaded.
 require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
 
+// WP_Filesystem gateway used by the feed engine and discovery writers.
+require_once ACPFW_PLUGIN_DIR . 'includes/class-files.php';
+
 /**
  * Declare compatibility with WooCommerce feature sets.
  *
@@ -114,6 +117,7 @@ function acpfw_woocommerce_missing_notice() {
  */
 function acpfw_activate_plugin() {
         require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
+        require_once ACPFW_PLUGIN_DIR . 'includes/class-files.php';
 
         ACPFW_Plugin_Core::prepare_feed_directory();
 

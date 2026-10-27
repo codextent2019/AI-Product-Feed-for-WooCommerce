@@ -270,8 +270,8 @@ final class ACPFW_Admin_Menu {
                 }
 
                 if ( 'rescored' === $notice ) {
-                        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                        $count = absint( $_GET['acpfw_count'] );
+                        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only confirmation banner.
+                        $count = isset( $_GET['acpfw_count'] ) ? absint( wp_unslash( $_GET['acpfw_count'] ) ) : 0;
 
                         printf(
                                 '<div class="notice notice-success is-dismissible"><p>%s</p></div>',

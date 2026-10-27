@@ -296,7 +296,7 @@ final class ACPFW_Well_Known_Router {
                 }
 
                 header( 'Content-Length: ' . (string) filesize( $path ) );
-                readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- efficient file streaming.
+                readfile( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Streams the feed straight to AI crawlers; WP_Filesystem has no streaming read API and loading large feeds into memory can exceed PHP memory_limit.
         }
 
         /**

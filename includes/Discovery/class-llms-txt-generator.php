@@ -298,7 +298,7 @@ final class ACPFW_LLMS_Txt_Generator {
 
                 ACPFW_Plugin_Core::prepare_feed_directory();
 
-                $handle = fopen( $tmp, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- atomic temp-file streaming.
+                $handle = fopen( $tmp, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming write to a temp file: WP_Filesystem has no append API and buffering arbitrarily large catalogs in memory can exceed PHP memory_limit.
 
                 if ( ! $handle ) {
                         wp_delete_file( $tmp );
@@ -315,7 +315,7 @@ final class ACPFW_LLMS_Txt_Generator {
                         ) . "\n\n"
                         . __( 'Format: each product lists its URL, price, availability, brand, a short description and store-provided Q&A when available. Visit the product URL for the live page.', 'agentic-commerce-ai-product-feed' ) . "\n\n";
 
-                fwrite( $handle, $header ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fwrite( $handle, $header ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Streaming write to the temp file opened above.
 
                 $page     = 1;
                 $count    = 0;
@@ -348,7 +348,7 @@ final class ACPFW_LLMS_Txt_Generator {
                                         continue;
                                 }
 
-                                fwrite( $handle, self::render_product_block( $product, $currency ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                                fwrite( $handle, self::render_product_block( $product, $currency ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Streaming write to the temp file opened above.
                                 $count++;
                                 $products++;
                         }
@@ -356,10 +356,10 @@ final class ACPFW_LLMS_Txt_Generator {
                         $page++;
                 } while ( count( $product_ids ) === self::PAGE_SIZE );
 
-                fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming write finished.
 
                 // A failed swap must not pretend success.
-                if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+                if ( ! ACPFW_Files::fs()->move( $tmp, $path, true ) ) {
                         wp_delete_file( $tmp );
 
                         return false;
@@ -823,7 +823,7 @@ final class ACPFW_LLMS_Txt_Generator {
                 ACPFW_Plugin_Core::prepare_feed_directory();
 
                 $tmp    = $path . '.tmp-' . uniqid( '', true );
-                $handle = fopen( $tmp, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- atomic temp-file write.
+                $handle = fopen( $tmp, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming write to a temp file: WP_Filesystem has no append API and buffering arbitrarily large catalogs in memory can exceed PHP memory_limit.
 
                 if ( ! $handle ) {
                         wp_delete_file( $tmp );
@@ -831,10 +831,10 @@ final class ACPFW_LLMS_Txt_Generator {
                         return false;
                 }
 
-                fwrite( $handle, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
-                fclose( $handle );            // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fwrite( $handle, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Streaming write to the temp file opened above.
+                fclose( $handle );            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming write finished.
 
-                if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+                if ( ! ACPFW_Files::fs()->move( $tmp, $path, true ) ) {
                         wp_delete_file( $tmp );
 
                         return false;

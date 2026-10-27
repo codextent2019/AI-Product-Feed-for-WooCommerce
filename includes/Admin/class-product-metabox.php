@@ -416,7 +416,7 @@ final class ACPFW_Product_Metabox {
          * @return void
          */
         public function handle_rescore() {
-                $post_id = isset( $_GET['post'] ) ? absint( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- absint on next use.
+                $post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Recommended -- Read-only lookup on the edit screen; the metabox save handler verifies its own nonce.
 
                 if ( ! $post_id || 'product' !== get_post_type( $post_id ) ) {
                         wp_die( esc_html__( 'Invalid product.', 'agentic-commerce-ai-product-feed' ) );

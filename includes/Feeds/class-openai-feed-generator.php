@@ -82,14 +82,14 @@ final class ACPFW_OpenAI_Feed_Generator {
                 $tmp_csv   = $csv_path . '.tmp-' . uniqid( '', true );
 
                 $jsonl_handle = fopen( $tmp_jsonl, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions -- atomic temp-file streaming.
-                $csv_handle   = fopen( $tmp_csv, 'wb' );   // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                $csv_handle   = fopen( $tmp_csv, 'wb' );   // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Streaming write to a temp file: WP_Filesystem has no append API and buffering arbitrarily large catalogs in memory can exceed PHP memory_limit.
 
                 if ( ! $jsonl_handle || ! $csv_handle ) {
                         if ( $jsonl_handle ) {
-                                fclose( $jsonl_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                                fclose( $jsonl_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming temp-file handle teardown / end of write.
                         }
                         if ( $csv_handle ) {
-                                fclose( $csv_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                                fclose( $csv_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming temp-file handle teardown / end of write.
                         }
                         wp_delete_file( $tmp_jsonl );
                         wp_delete_file( $tmp_csv );
@@ -106,12 +106,12 @@ final class ACPFW_OpenAI_Feed_Generator {
                 // and renders multibyte characters (e.g. an em dash —) as mojibake
                 // like "â€"". The BOM is valid UTF-8 and is stripped by feed
                 // consumers; the JSONL file stays BOM-free for strict JSON parsers.
-                fwrite( $csv_handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fwrite( $csv_handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Streaming write to the temp file opened above.
 
                 // CSV header. All five fputcsv arguments are passed explicitly:
                 // omitting $escape triggers a deprecation on PHP 8.4+.
                 $columns = ACPFW_Product_Mapper::csv_columns();
-                fputcsv( $csv_handle, $columns, ',', '"', '\\' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fputcsv( $csv_handle, $columns, ',', '"', '\\' );
 
                 $row_count     = 0;
                 $product_count = 0;
@@ -206,16 +206,18 @@ final class ACPFW_OpenAI_Feed_Generator {
                         $page++;
                 } while ( count( $product_ids ) === self::PAGE_SIZE );
 
-                fclose( $jsonl_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
-                fclose( $csv_handle );   // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fclose( $jsonl_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming temp-file handle teardown / end of write.
+                fclose( $csv_handle );   // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Streaming temp-file handle teardown / end of write.
 
                 /*
                  * Atomic swap: crawlers only ever see complete files. A failed
-                 * rename() must never be silent — the stats would otherwise
+                 * move must never be silent — the stats would otherwise
                  * report success while the old (or missing) feed is served.
+                 * WP_Filesystem::move() issues a real rename() on direct hosts.
                  */
-                $jsonl_ok = @rename( $tmp_jsonl, $jsonl_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.
-                $csv_ok   = @rename( $tmp_csv, $csv_path );     // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.
+                $fs       = ACPFW_Files::fs();
+                $jsonl_ok = $fs->move( $tmp_jsonl, $jsonl_path, true );
+                $csv_ok   = $fs->move( $tmp_csv, $csv_path, true );
 
                 $stats = array(
                         'rows'         => $row_count,
@@ -259,7 +261,7 @@ final class ACPFW_OpenAI_Feed_Generator {
                         $jsonl_row[ $key ] = $value;
                 }
 
-                fwrite( $jsonl_handle, wp_json_encode( $jsonl_row, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fwrite( $jsonl_handle, wp_json_encode( $jsonl_row, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Streaming write to the temp file opened above.
 
                 // CSV: serialize nested values as JSON strings, in column order.
                 $csv_row = array();
@@ -275,7 +277,7 @@ final class ACPFW_OpenAI_Feed_Generator {
                         $csv_row[] = $value;
                 }
 
-                fputcsv( $csv_handle, $csv_row, ',', '"', '\\' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fputcsv( $csv_handle, $csv_row, ',', '"', '\\' );
         }
 
         /**

@@ -45,7 +45,10 @@ final class ACPFW_Plugin_Core {
         private function __construct() {
                 $this->includes();
 
-                add_action( 'init', array( $this, 'load_textdomain' ), 1 );
+                /* Translations: wordpress.org loads plugin translations
+                 * automatically since WP 4.6 — no load_plugin_textdomain() call
+                 * (discouraged by Plugin Check). Custom .mo files dropped into
+                 * wp-content/languages/plugins/ keep working without it. */
                 add_filter( 'query_vars', array( $this, 'register_query_vars' ) );
                 add_action( 'init', array( __CLASS__, 'add_rewrite_rules' ) );
                 add_action( 'init', array( __CLASS__, 'maybe_schedule_generation' ) );
@@ -148,19 +151,6 @@ final class ACPFW_Plugin_Core {
         }
 
         /**
-         * Load the plugin textdomain for translations.
-         *
-         * @return void
-         */
-        public function load_textdomain() {
-                load_plugin_textdomain(
-                        'agentic-commerce-ai-product-feed',
-                        false,
-                        dirname( ACPFW_PLUGIN_BASENAME ) . '/languages'
-                );
-        }
-
-        /**
          * Register the custom query vars used by our rewrite endpoints.
          *
          * @param array $vars Registered query vars.
@@ -246,7 +236,7 @@ final class ACPFW_Plugin_Core {
                 }
 
                 if ( ! file_exists( $feed_dir . '/index.php' ) ) {
-                        file_put_contents( $feed_dir . '/index.php', "<?php // Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+                        ACPFW_Files::fs()->put_contents( $feed_dir . '/index.php', "<?php // Silence is golden.\n", FS_CHMOD_FILE );
                 }
 
                 $stale_tmp = (array) glob( $feed_dir . '/*.tmp-*' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
@@ -454,7 +444,7 @@ final class ACPFW_Plugin_Core {
                 nocache_headers();
                 ignore_user_abort( true ); // Finish the rebuild even if the cron service disconnects early.
 
-                $token  = isset( $_GET['token'] ) ? sanitize_key( wp_unslash( $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
+                $token  = isset( $_GET['token'] ) ? sanitize_key( wp_unslash( $_GET['token'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Recommended -- External machine endpoint: a nonce cannot exist for cron callers; the URL token IS the credential and is compared with hash_equals() below.
                 $stored = (string) $this->get_setting( 'cron_token', '' );
 
                 if ( '' === $stored || '' === $token || ! hash_equals( $stored, $token ) ) {

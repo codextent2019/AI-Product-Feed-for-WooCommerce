@@ -13,6 +13,10 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+// Filesystem gateway: uninstall runs outside the normal plugin boot,
+// so the WP_Filesystem wrapper is loaded explicitly here.
+require_once __DIR__ . '/includes/class-files.php';
+
 /**
  * Full cleanup for a single site (call with switch_to_blog() context active).
  *
@@ -81,7 +85,9 @@ function acpfw_uninstall_site() {
 
 	$acpfw_as_actions = $wpdb->prefix . 'actionscheduler_actions';
 	if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $acpfw_as_actions ) ) === $acpfw_as_actions ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( "DELETE FROM {$acpfw_as_actions} WHERE hook LIKE 'acpfw\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// %i (identifier placeholder, WP 6.2+) keeps the table name out of
+		// raw interpolation; the hook pattern travels as a bound parameter.
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE hook LIKE %s', $acpfw_as_actions, 'acpfw\\_%' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-shot uninstall cleanup.
 	}
 
 	/*
@@ -90,17 +96,10 @@ function acpfw_uninstall_site() {
 	$acpfw_upload_dir = wp_upload_dir();
 	$acpfw_feed_dir   = trailingslashit( $acpfw_upload_dir['basedir'] ) . 'acpfw-feeds';
 
-	if ( is_dir( $acpfw_feed_dir ) ) {
-		$acpfw_files = (array) glob( $acpfw_feed_dir . '/*' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		foreach ( $acpfw_files as $acpfw_file ) {
-			if ( is_file( $acpfw_file ) ) {
-				wp_delete_file( $acpfw_file );
-			}
-		}
-
-		if ( is_dir( $acpfw_feed_dir ) ) {
-			@rmdir( $acpfw_feed_dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
-		}
+	if ( ACPFW_Files::fs()->is_dir( $acpfw_feed_dir ) ) {
+		// Recursive delete: feed files, stale .tmp-* leftovers and the
+		// directory itself, all through WP_Filesystem.
+		ACPFW_Files::fs()->delete( $acpfw_feed_dir, true );
 	}
 
 	// Clear the cached rewrite rules for our endpoints.
