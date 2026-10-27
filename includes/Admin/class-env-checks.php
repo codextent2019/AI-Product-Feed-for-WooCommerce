@@ -190,7 +190,9 @@ final class ACPFW_Env_Checks {
                 $public = '1' === (string) get_option( 'blog_public', '1' );
 
                 $base   = "User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n\n";
-                $robots = $public ? (string) apply_filters( 'robots_txt', $base, true ) : '';
+                // Re-fires WordPress core's own "robots_txt" filter on a synthetic base to
+                // compute the effective robots.txt output; the hook name belongs to WordPress.
+                $robots = $public ? (string) apply_filters( 'robots_txt', $base, true ) : ''; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook name, deliberately re-fired.
                 $rows   = array();
                 $status = 'pass';
 

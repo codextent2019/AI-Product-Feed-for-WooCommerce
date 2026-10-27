@@ -496,8 +496,8 @@ msgid "Generate your product feeds"
 msgstr ""
 
 #: includes/Discovery/class-llms-txt-generator.php
-#. /* translators: %s: date
-msgid "Generated on %s for AI assistants. Prices are in %s."
+#. /* translators: 1: date, 2: currency code
+msgid "Generated on %1$s for AI assistants. Prices are in %2$s."
 msgstr ""
 
 #: includes/Admin/class-env-checks.php

@@ -1,0 +1,5 @@
+# Development-only files — excluded from distribution archives
+# (git archive, `make dist`, and GitHub "Download ZIP" all honor export-ignore).
+.gitattributes export-ignore
+.github export-ignore
+phpcs.xml export-ignore

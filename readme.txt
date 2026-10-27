@@ -1,4 +1,4 @@
-=== Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT, ACP, UCP & LLMs.txt ===
+=== Agentic Commerce & AI Product Feed ===
 Contributors: codextent2019
 Tags: agentic-commerce, product feed, acp, ucp, llms.txt
 Requires at least: 6.2
@@ -78,4 +78,5 @@ Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI
 * Product JSON-LD enrichment: injects hasMerchantReturnPolicy and shippingDetails into Product schema and publishes FAQPage JSON-LD, extending Yoast SEO and Rank Math output via native filters when active.
 * 1-click brand & GTIN field mapper, AI bot allowlist & crawler monitor, 3-step setup checklist, configurable rebuild schedule (hourly / twice daily / daily / weekly / external cron with secret URL, plus optional rebuild-on-product-change), and opt-in clean uninstall.
 * Merchant logo resolution for discovery manifests: Customizer Site Logo preferred, Site Icon fallback, manual override URL in settings, all filterable via acpfw_merchant_logo.
-* WordPress coding standards pass: all file operations routed through WP_Filesystem, prepared SQL with identifier placeholders, strict superglobal validation, no manual textdomain loading, and a shipped phpcs.xml.dist for the official WordPress ruleset.
+* WordPress coding standards pass: all file operations routed through WP_Filesystem, prepared SQL with identifier placeholders, strict superglobal validation, no manual textdomain loading, and a shipped PHPCS ruleset for the official WordPress standard.
+* Plugin Check green pass: readme title aligned with the plugin header name, ordered placeholders in translatable strings, and development-only files (PHPCS ruleset, GitHub workflows) excluded from the distribution package.

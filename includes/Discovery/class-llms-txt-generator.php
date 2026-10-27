@@ -308,8 +308,8 @@ final class ACPFW_LLMS_Txt_Generator {
 
                 $header = '# ' . sprintf( /* translators: %s: store name */ __( '%s — full product catalog', 'agentic-commerce-ai-product-feed' ), $store ) . "\n\n"
                         . sprintf(
-                                /* translators: %s: date */
-                                __( 'Generated on %s for AI assistants. Prices are in %s.', 'agentic-commerce-ai-product-feed' ),
+                                /* translators: 1: date, 2: currency code */
+                                __( 'Generated on %1$s for AI assistants. Prices are in %2$s.', 'agentic-commerce-ai-product-feed' ),
                                 wp_date( get_option( 'date_format' ) ),
                                 '' !== $currency ? $currency : __( 'store currency', 'agentic-commerce-ai-product-feed' )
                         ) . "\n\n"
