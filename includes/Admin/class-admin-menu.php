@@ -119,6 +119,7 @@ final class ACPFW_Admin_Menu {
                         'seller_name'       => isset( $_POST['seller_name'] ) ? sanitize_text_field( wp_unslash( $_POST['seller_name'] ) ) : '',
                         'return_policy_url' => isset( $_POST['return_policy_url'] ) ? esc_url_raw( wp_unslash( $_POST['return_policy_url'] ) ) : '',
                         'shipping_summary'  => isset( $_POST['shipping_summary'] ) ? sanitize_textarea_field( wp_unslash( $_POST['shipping_summary'] ) ) : '',
+                        'logo_url'          => isset( $_POST['logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['logo_url'] ) ) : '',
                         'default_brand'     => isset( $_POST['default_brand'] ) ? sanitize_text_field( wp_unslash( $_POST['default_brand'] ) ) : '',
                         // sanitize_text_field, NOT sanitize_key: meta keys are
                         // case-sensitive, and lowercasing "_BrandName" would
@@ -736,6 +737,28 @@ final class ACPFW_Admin_Menu {
                                                                 <td>
                                                                         <input type="text" id="acpfw-seller-name" name="seller_name" class="regular-text" value="<?php echo esc_attr( (string) $settings['seller_name'] ); ?>" />
                                                                         <p class="description"><?php esc_html_e( 'Shown to AI assistants and inside feeds. Defaults to your site title.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                                                </td>
+                                                        </tr>
+                                                        <tr>
+                                                                <th scope="row"><label for="acpfw-logo-url"><?php esc_html_e( 'Merchant logo URL', 'agentic-commerce-ai-product-feed' ); ?></label></th>
+                                                                <td>
+                                                                        <input type="url" id="acpfw-logo-url" name="logo_url" class="regular-text" value="<?php echo esc_attr( (string) $settings['logo_url'] ); ?>" placeholder="https://…" />
+                                                                        <p class="description">
+                                                                                <?php
+                                                                                $detected_logo = ACPFW_Well_Known_Router::get_merchant_logo_url();
+                                                                                if ( '' !== trim( (string) $settings['logo_url'] ) ) {
+                                                                                        esc_html_e( 'Manual override active. Empty the field to return to automatic detection.', 'agentic-commerce-ai-product-feed' );
+                                                                                } elseif ( '' !== $detected_logo ) {
+                                                                                        printf(
+                                                                                                /* translators: %s: auto-detected logo URL */
+                                                                                                esc_html__( 'Auto-detected from your Site Logo or Site Icon: %s. Enter a URL to override.', 'agentic-commerce-ai-product-feed' ),
+                                                                                                '<code>' . esc_html( $detected_logo ) . '</code>'
+                                                                                        );
+                                                                                } else {
+                                                                                        esc_html_e( 'No logo found yet. Set one in Appearance > Customize > Site Identity (Logo or Site Icon), or paste an image URL here.', 'agentic-commerce-ai-product-feed' );
+                                                                                }
+                                                                                ?>
+                                                                        </p>
                                                                 </td>
                                                         </tr>
                                                         <tr>

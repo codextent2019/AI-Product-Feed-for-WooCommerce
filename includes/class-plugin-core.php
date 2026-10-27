@@ -297,6 +297,7 @@ final class ACPFW_Plugin_Core {
                                 'seller_name'       => get_bloginfo( 'name' ),
                                 'return_policy_url' => '',
                                 'shipping_summary'  => '',
+                                'logo_url'          => '',
                                 'default_brand'     => '',
                                 'brand_source'      => 'auto',
                                 'gtin_source'       => '_global_unique_id',

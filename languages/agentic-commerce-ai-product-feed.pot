@@ -206,6 +206,11 @@ msgstr ""
 msgid "Answer"
 msgstr ""
 
+#: includes/Admin/class-admin-menu.php
+#. /* translators: %s: auto-detected logo URL
+msgid "Auto-detected from your Site Logo or Site Icon: %s. Enter a URL to override."
+msgstr ""
+
 #: includes/Admin/class-product-metabox.php
 msgid "Automatic (from attributes)"
 msgstr ""
@@ -562,8 +567,16 @@ msgstr ""
 msgid "Male"
 msgstr ""
 
+#: includes/Admin/class-admin-menu.php
+msgid "Manual override active. Empty the field to return to automatic detection."
+msgstr ""
+
 #: includes/Scoring/class-readiness-scorer.php
 msgid "Material"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Merchant logo URL"
 msgstr ""
 
 #: includes/Admin/class-admin-menu.php
@@ -614,6 +627,10 @@ msgstr ""
 
 #: includes/Scoring/class-readiness-scorer.php
 msgid "No conversational Q&A for AI prompts"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "No logo found yet. Set one in Appearance > Customize > Site Identity (Logo or Site Icon), or paste an image URL here."
 msgstr ""
 
 #: includes/Discovery/class-well-known-router.php

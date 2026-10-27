@@ -89,7 +89,7 @@ final class ACPFW_Well_Known_Router {
                                 'currency'          => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'USD',
                                 'return_policy_url' => (string) ( isset( $settings['return_policy_url'] ) ? $settings['return_policy_url'] : '' ),
                                 'description'       => (string) get_bloginfo( 'description' ),
-                                'logo'              => (string) get_site_icon_url(),
+                                'logo'              => self::get_merchant_logo_url(),
                         ),
                         'feeds'        => array(
                                 'products_jsonl' => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
@@ -174,6 +174,51 @@ final class ACPFW_Well_Known_Router {
                 $manifest = apply_filters( 'acpfw_ucp_manifest', $manifest );
 
                 self::send_json( $manifest );
+        }
+
+        /**
+         * Resolve the merchant logo URL.
+         *
+         * Resolution order:
+         *  1. Manual override (Settings > Merchant logo URL).
+         *  2. Customizer Site Logo (Appearance > Customize > Site Identity > Logo).
+         *  3. Site Icon (favicon) as the last automatic fallback.
+         *
+         * The result is filterable via 'acpfw_merchant_logo'.
+         *
+         * @return string Absolute URL, or '' when the site has no logo or icon.
+         */
+        public static function get_merchant_logo_url() {
+                $url = '';
+
+                $override = trim( (string) acpfw()->get_setting( 'logo_url', '' ) );
+                if ( '' !== $override ) {
+                        $url = esc_url_raw( $override );
+                }
+
+                if ( '' === $url ) {
+                        $logo_id = (int) get_theme_mod( 'custom_logo', 0 );
+                        if ( $logo_id > 0 ) {
+                                $attachment_url = wp_get_attachment_image_url( $logo_id, 'full' );
+                                if ( is_string( $attachment_url ) && '' !== $attachment_url ) {
+                                        $url = esc_url_raw( $attachment_url );
+                                }
+                        }
+                }
+
+                if ( '' === $url ) {
+                        $icon = get_site_icon_url( 512 );
+                        if ( is_string( $icon ) && '' !== $icon ) {
+                                $url = esc_url_raw( $icon );
+                        }
+                }
+
+                /**
+                 * Filter the merchant logo exposed in the discovery manifests.
+                 *
+                 * @param string $url Resolved logo URL ('' when none found).
+                 */
+                return (string) apply_filters( 'acpfw_merchant_logo', $url );
         }
 
         /* ---------------------------------------------------------------------
