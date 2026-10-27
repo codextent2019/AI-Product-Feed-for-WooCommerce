@@ -7,6 +7,9 @@
  *
  *  - _acpfw_brand              Brand override (top of the brand chain).
  *  - _acpfw_availability       Availability override.
+ *  - _acpfw_condition          Condition override (new/refurbished/used).
+ *  - _acpfw_gender             Gender override (male/female/unisex).
+ *  - _acpfw_age_group          Age group override (newborn/infant/toddler/kids/adult).
  *  - _acpfw_exclude_from_feed  Exclude the whole product from all AI output.
  *  - _acpfw_faqs               Conversational Q&A pairs (FAQ_SCHEMA check).
  *
@@ -91,6 +94,9 @@ final class ACPFW_Product_Metabox {
                 $product_id  = (int) $post->ID;
                 $brand       = (string) get_post_meta( $product_id, '_acpfw_brand', true );
                 $availability = (string) get_post_meta( $product_id, '_acpfw_availability', true );
+                $condition   = (string) get_post_meta( $product_id, '_acpfw_condition', true );
+                $gender      = (string) get_post_meta( $product_id, '_acpfw_gender', true );
+                $age_group   = (string) get_post_meta( $product_id, '_acpfw_age_group', true );
                 $excluded    = ( 'yes' === get_post_meta( $product_id, '_acpfw_exclude_from_feed', true ) );
                 $faqs        = get_post_meta( $product_id, '_acpfw_faqs', true );
                 $faqs        = is_array( $faqs ) ? $faqs : array();
@@ -116,6 +122,38 @@ final class ACPFW_Product_Metabox {
                                         <option value="pre_order" <?php selected( 'pre_order', $availability ); ?>><?php esc_html_e( 'Pre-order', 'agentic-commerce-ai-product-feed' ); ?></option>
                                         <option value="backorder" <?php selected( 'backorder', $availability ); ?>><?php esc_html_e( 'Backorder', 'agentic-commerce-ai-product-feed' ); ?></option>
                                         <option value="out_of_stock" <?php selected( 'out_of_stock', $availability ); ?>><?php esc_html_e( 'Out of stock', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                </select>
+                        </div>
+
+                        <div class="acpfw-field">
+                                <label class="acpfw-field__label" for="acpfw_condition"><?php esc_html_e( 'Condition override', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                <select id="acpfw_condition" name="acpfw_condition">
+                                        <option value=""><?php esc_html_e( 'Automatic (new)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="new" <?php selected( 'new', $condition ); ?>><?php esc_html_e( 'New', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="refurbished" <?php selected( 'refurbished', $condition ); ?>><?php esc_html_e( 'Refurbished', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="used" <?php selected( 'used', $condition ); ?>><?php esc_html_e( 'Used', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                </select>
+                        </div>
+
+                        <div class="acpfw-field">
+                                <label class="acpfw-field__label" for="acpfw_gender"><?php esc_html_e( 'Gender override', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                <select id="acpfw_gender" name="acpfw_gender">
+                                        <option value=""><?php esc_html_e( 'Automatic (from attributes)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="male" <?php selected( 'male', $gender ); ?>><?php esc_html_e( 'Male', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="female" <?php selected( 'female', $gender ); ?>><?php esc_html_e( 'Female', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="unisex" <?php selected( 'unisex', $gender ); ?>><?php esc_html_e( 'Unisex', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                </select>
+                        </div>
+
+                        <div class="acpfw-field">
+                                <label class="acpfw-field__label" for="acpfw_age_group"><?php esc_html_e( 'Age group override', 'agentic-commerce-ai-product-feed' ); ?></label>
+                                <select id="acpfw_age_group" name="acpfw_age_group">
+                                        <option value=""><?php esc_html_e( 'Automatic (from attributes)', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="newborn" <?php selected( 'newborn', $age_group ); ?>><?php esc_html_e( 'Newborn', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="infant" <?php selected( 'infant', $age_group ); ?>><?php esc_html_e( 'Infant', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="toddler" <?php selected( 'toddler', $age_group ); ?>><?php esc_html_e( 'Toddler', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="kids" <?php selected( 'kids', $age_group ); ?>><?php esc_html_e( 'Kids', 'agentic-commerce-ai-product-feed' ); ?></option>
+                                        <option value="adult" <?php selected( 'adult', $age_group ); ?>><?php esc_html_e( 'Adult', 'agentic-commerce-ai-product-feed' ); ?></option>
                                 </select>
                         </div>
 
@@ -308,6 +346,30 @@ final class ACPFW_Product_Metabox {
                         update_post_meta( $post_id, '_acpfw_availability', $availability );
                 } else {
                         delete_post_meta( $post_id, '_acpfw_availability' );
+                }
+
+                $condition = isset( $_POST['acpfw_condition'] ) ? sanitize_key( wp_unslash( $_POST['acpfw_condition'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
+
+                if ( in_array( $condition, array( 'new', 'refurbished', 'used' ), true ) ) {
+                        update_post_meta( $post_id, '_acpfw_condition', $condition );
+                } else {
+                        delete_post_meta( $post_id, '_acpfw_condition' );
+                }
+
+                $gender = isset( $_POST['acpfw_gender'] ) ? sanitize_key( wp_unslash( $_POST['acpfw_gender'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
+
+                if ( in_array( $gender, array( 'male', 'female', 'unisex' ), true ) ) {
+                        update_post_meta( $post_id, '_acpfw_gender', $gender );
+                } else {
+                        delete_post_meta( $post_id, '_acpfw_gender' );
+                }
+
+                $age_group = isset( $_POST['acpfw_age_group'] ) ? sanitize_key( wp_unslash( $_POST['acpfw_age_group'] ) ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- sanitized on this line.
+
+                if ( in_array( $age_group, array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ), true ) ) {
+                        update_post_meta( $post_id, '_acpfw_age_group', $age_group );
+                } else {
+                        delete_post_meta( $post_id, '_acpfw_age_group' );
                 }
 
                 if ( isset( $_POST['acpfw_exclude'] ) && 'yes' === $_POST['acpfw_exclude'] ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- compared to literal.

@@ -8,14 +8,8 @@
  *  - 50-79   amber  "Needs Polish"
  *  - 0-49    red    "AI Blocked"
  *
- * The Auto-Fix chip only appears when at least one open issue is actually
- * AI-fixable (thin description, missing structured attributes, missing Q&A).
- * Issues a merchant must solve with real data (price, image, identifiers)
- * do not show a chip, so the affordance never fires on products Pro cannot
- * genuinely improve.
- *
  * All styling lives in assets/css/admin-list.css, enqueued on the
- * products list screen only (column width, bands, meter, Auto-Fix chip).
+ * products list screen only (column width, bands, meter).
  *
  * @package ACPFW
  */
@@ -150,32 +144,10 @@ final class ACPFW_Product_List_Column {
                 }
 
                 $pct = max( 0, min( 100, $score ) );
-                $fix = '';
-
-                /*
-                 * Chip only for AI-fixable issues (Pro Auto-Fix rewrites
-                 * descriptions, extracts attributes, generates Q&A). Showing
-                 * it on every sub-80 row was noise: a product blocked by a
-                 * missing price or image cannot be fixed by AI.
-                 */
-                $fixable_issues = array( 'DESC_LEN', 'ATTRS', 'FAQ_SCHEMA' );
-
-                if ( $score < 80 && is_array( $issues ) && ! empty( array_intersect( $fixable_issues, $issues ) ) ) {
-                        $fix = sprintf(
-                                '<a class="acpfw-readiness__fix" href="%1$s" title="%2$s"><span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>%3$s</a>',
-                                esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),
-                                esc_attr__( 'One-click AI Auto-Fix is included in the Pro version.', 'agentic-commerce-ai-product-feed' ),
-                                esc_html__( 'Auto-Fix with AI', 'agentic-commerce-ai-product-feed' )
-                        );
-                }
 
                 echo '<div class="acpfw-readiness acpfw-readiness--' . esc_attr( $band ) . '" title="' . esc_attr( $tooltip ) . '">';
                 echo '<span class="acpfw-readiness__head"><span class="acpfw-readiness__dot" aria-hidden="true"></span><span class="acpfw-readiness__label">' . esc_html( $label ) . '</span></span>';
                 echo '<span class="acpfw-readiness__meterline"><span class="acpfw-readiness__meter" aria-hidden="true"><i style="width:' . esc_attr( $pct ) . '%;"></i></span><span class="acpfw-readiness__score">' . esc_html( $score ) . '/100</span></span>';
-
-                if ( '' !== $fix ) {
-                        echo $fix; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fully escaped when built above.
-                }
 
                 echo '</div>';
         }

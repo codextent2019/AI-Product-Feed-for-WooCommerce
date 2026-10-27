@@ -522,53 +522,6 @@
         color: var(--acpfw-gray);
 }
 
-/* -------------------------------------------------------------- Pro box */
-
-.acpfw-pro {
-        background: linear-gradient(120deg, var(--acpfw-purple-soft) 0%, #ede6f7 100%);
-        border: 1px solid #d9cbee;
-        border-radius: var(--acpfw-radius);
-        max-width: 1080px;
-        padding: 22px 26px;
-}
-
-.acpfw-pro__title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 0 0 10px;
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--acpfw-purple-dark);
-}
-
-.acpfw-pro ul {
-        margin: 0 0 12px;
-        padding: 0;
-        list-style: none;
-}
-
-.acpfw-pro li {
-        display: flex;
-        gap: 9px;
-        align-items: flex-start;
-        padding: 4px 0;
-        font-size: 13px;
-        color: #3c434a;
-}
-
-.acpfw-pro li .dashicons {
-        color: var(--acpfw-green);
-        margin-top: 1px;
-}
-
-.acpfw-pro__note {
-        margin: 0;
-        font-size: 12.5px;
-        color: var(--acpfw-gray);
-}
-
-
 /* --------------------------------------------------- Inline POST forms */
 
 /* State-changing buttons (generate, rescore, token regen) are real POST
@@ -580,17 +533,8 @@
 }
 
 .acpfw-inline-form + .acpfw-inline-form,
-.acpfw-card__actions .acpfw-inline-form,
-.acpfw-pro__actions {
+.acpfw-card__actions .acpfw-inline-form {
         margin-top: 0;
-}
-
-.acpfw-pro__actions {
-        margin: 0 0 12px;
-}
-
-.acpfw-pro__actions .button-primary {
-        text-decoration: none;
 }
 
 /* ------------------------------------------------------------- Settings */

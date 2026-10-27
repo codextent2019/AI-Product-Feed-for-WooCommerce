@@ -122,9 +122,19 @@ final class ACPFW_Plugin_Core {
                 // Discovery (llms.txt files + .well-known manifests).
                 require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-llms-txt-generator.php';
                 require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-well-known-router.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-schema-extender.php';
+                require_once ACPFW_PLUGIN_DIR . 'includes/Discovery/class-rest-catalog.php';
 
                 // Refresh the llms*.txt files whenever the feeds rebuild.
                 add_action( 'acpfw_feeds_generated', array( 'ACPFW_LLMS_Txt_Generator', 'generate_all' ) );
+
+                // Append the commerce catalog block to Yoast / Rank Math llms.txt.
+                add_filter( 'wpseo_llmstxt_content', array( 'ACPFW_LLMS_Txt_Generator', 'filter_seo_llms_txt' ), 10 );
+                add_filter( 'rank_math/llmstxt/content', array( 'ACPFW_LLMS_Txt_Generator', 'filter_seo_llms_txt' ), 10 );
+
+                // Product JSON-LD enrichment + UCP catalog search endpoint.
+                ACPFW_Schema_Extender::init();
+                ACPFW_Rest_Catalog::init();
 
                 // Admin UI.
                 require_once ACPFW_PLUGIN_DIR . 'includes/Admin/class-admin-menu.php';

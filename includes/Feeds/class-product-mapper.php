@@ -51,6 +51,17 @@ final class ACPFW_Product_Mapper {
         }
 
         /**
+         * Plain-text product title matching feed row formatting
+         * (HTML entities decoded, single-spaced, max 150 chars).
+         *
+         * @param WC_Product $product Product object.
+         * @return string
+         */
+        public static function format_title( $product ) {
+                return self::truncate( self::clean_text( (string) $product->get_name() ), 150 );
+        }
+
+        /**
          * GS1 Modulo-10 check-digit validation for GTIN-8/12/13/14.
          *
          * @param string $gtin Candidate GTIN (digits only expected).
@@ -427,16 +438,17 @@ final class ACPFW_Product_Mapper {
                 $row['size']             = self::get_attribute_value( $product, $parent, 'size', '_acpfw_size' );
 
                 /*
-                 * Gender / age_group are enum fields in the spec: normalize
-                 * case ("Male" -> "male") so merchant terms like Male/Female
-                 * actually reach the feed instead of being silently dropped.
+                 * Gender / age_group are enum fields in the spec: the metabox
+                 * override wins, then attributes are normalized ("Male" ->
+                 * "male") so merchant terms like Male/Female actually reach
+                 * the feed instead of being silently dropped.
                  */
-                $gender = strtolower( trim( (string) self::get_attribute_value( $product, $parent, 'gender', '_acpfw_gender' ) ) );
+                $gender = strtolower( trim( (string) self::get_overridden_value( $product, $parent, 'gender', '_acpfw_gender' ) ) );
                 if ( in_array( $gender, array( 'male', 'female', 'unisex' ), true ) ) {
                         $row['gender'] = $gender;
                 }
 
-                $age_group = strtolower( trim( (string) self::get_attribute_value( $product, $parent, 'age_group', '_acpfw_age_group' ) ) );
+                $age_group = strtolower( trim( (string) self::get_overridden_value( $product, $parent, 'age_group', '_acpfw_age_group' ) ) );
                 if ( in_array( $age_group, array( 'newborn', 'infant', 'toddler', 'kids', 'adult' ), true ) ) {
                         $row['age_group'] = $age_group;
                 }
@@ -471,7 +483,7 @@ final class ACPFW_Product_Mapper {
                 }
                 $row['is_eligible_search'] = ( '' === $eligible_search ) ? true : (bool) $eligible_search;
 
-                // Free plugin: no ACP checkout sessions; Pro flips this flag.
+                // Feed-only plugin: no agentic checkout sessions are offered,
                 $row['is_eligible_checkout'] = false;
 
                 /*
@@ -787,6 +799,33 @@ final class ACPFW_Product_Mapper {
                 }
 
                 return self::resolve_attribute( $parent, $slug, $meta_key, false );
+        }
+
+        /**
+         * Metabox override first, then the unified attribute resolver.
+         *
+         * The condition/gender/age-group metabox fields are explicit merchant
+         * decisions, so they beat automatically detected attributes. Falls
+         * back to the product's own attributes and then the parent's.
+         *
+         * @param WC_Product      $product  Product or variation object.
+         * @param WC_Product|null $parent   Parent product object.
+         * @param string          $slug     Attribute slug (without pa_ prefix).
+         * @param string          $meta_key Override meta key.
+         * @return string
+         */
+        private static function get_overridden_value( $product, $parent, $slug, $meta_key ) {
+                $meta = (string) get_post_meta( $product->get_id(), $meta_key, true );
+
+                if ( '' === $meta && $parent instanceof WC_Product ) {
+                        $meta = (string) get_post_meta( $parent->get_id(), $meta_key, true );
+                }
+
+                if ( '' !== $meta ) {
+                        return $meta;
+                }
+
+                return self::get_attribute_value( $product, $parent, $slug, $meta_key );
         }
 
         /**

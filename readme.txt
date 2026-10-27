@@ -1,4 +1,4 @@
-=== Agentic Commerce & AI Product Feed for WooCommerce ===
+=== Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt ===
 Contributors: codextent2019
 Tags: agentic-commerce, product feed, acp, ucp, llms.txt
 Requires at least: 6.2
@@ -7,7 +7,7 @@ Requires PHP: 7.4
 Requires Plugins: woocommerce
 WC requires at least: 7.6
 WC tested up to: 11.0
-Stable tag: 1.0.2
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,14 +31,6 @@ When 700M+ weekly shoppers ask AI assistants *"Find me waterproof trail running 
 * **AI Readiness Score (0–100) in Products List:** Adds a real-time diagnostic badge directly inside your Products > All Products screen, flagging missing Brands, invalid GTIN check digits, thin descriptions, or missing attributes that block AI recommendations.
 * **1-Click Brand & GTIN Field Mapper:** Map existing GTIN, UPC, EAN, ISBN, MPN, and Brand values from WooCommerce Core, Yoast, Rank Math, Germanized, or any custom meta key.
 * **AI Bot Allowlist & Crawler Monitor:** Ensures `OAI-SearchBot`, `ChatGPT-User`, `GPTBot`, `PerplexityBot`, `ClaudeBot`, and `Google-Extended` can access your feeds and product schema without being blocked.
-
-= Pro Features (Agentic Commerce Pro) =
-
-* **BYOK (Bring Your Own Key) AI Auto-Fixer:** Connect your own OpenAI, Google Gemini, or Anthropic Claude API key to bulk-fix low AI Readiness Scores across thousands of products: auto-extracts missing `material`, `color`, `gender`, `age_group`, and `condition`; rewrites thin descriptions into factual, AI-quotable summaries; and generates conversational FAQPage JSON-LD schema.
-* **15-Minute Real-Time Delta Feed Sync & .GZ Compression:** Uses WooCommerce Action Scheduler to update only modified SKUs, prices, and stock levels in the background and exports Gzip-compressed `.jsonl.gz` and `.csv.gz` feeds for high-volume catalogs.
-* **ACP & UCP Agentic Checkout Endpoints (Model A & Model B):** Full ACP REST lifecycle with Stripe Shared Payment Token support and RFC 9421 / HMAC-SHA256 webhook signing (Model A), or a zero-Stripe universal cart deep-link checkout that works with PayPal, WooPayments, Square, or COD (Model B).
-* **ChatGPT Ads Measurement Pixel & Conversions API:** Built-in browser + server-side conversion tracking with SHA-256 customer hashing, event ID deduplication, and WP Consent API compliance.
-* **AI Channel Attribution & Revenue Dashboard:** Track orders, revenue, and crawl frequency originating from ChatGPT, Perplexity, Gemini, Copilot, and Claude.
 
 == Installation ==
 
@@ -78,27 +70,10 @@ Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI
 
 == Changelog ==
 
-= 1.0.2 =
-* CSV feeds now begin with a UTF-8 BOM so Excel renders em dashes and accented characters correctly instead of "â€""-style mojibake (without a BOM, Excel assumes Windows-1252); feed consumers strip the BOM automatically, and the JSONL feed stays BOM-free for strict JSON parsers.
-
-= 1.0.1 =
-* Variation export counts are now visible: the product metabox shows an amber note when some (or all) variations have no price and therefore cannot become feed rows (WooCommerce marks unpriced variations non-purchasable, and only purchasable variations are exported), with the exact bulk-price fix; llms-full.txt now reports "Available in N variants (M purchasable)" instead of overstating the buyable variant count.
-
 = 1.0.0 =
-* Initial release: OpenAI ACP product feeds (JSONL/CSV), /llms.txt + /llms-full.txt + /llms-commerce.txt generators, dual-protocol discovery manifests, AI Readiness Score engine, 3-step setup checklist, brand/GTIN field mapper, per-product AI feed metabox (brand/availability overrides, exclude toggle, conversational Q&A), AI bot allowlist & crawler monitor, and daily automatic rebuilds.
-* Product Q&A pairs now surface in llms-full.txt product blocks; configurable rebuild schedule (hourly / twice daily / daily / weekly / external cron with secret URL) plus optional rebuild-on-product-change (debounced); UCP manifest exposes llms-commerce.txt; normalized line endings in feed descriptions.
-* Readiness ATTRS check: the issue message now names exactly which structured attributes the product has and which are missing instead of a generic static string; scorer now also credits non-variation attributes defined on the parent product (e.g. Material) for variable products, mirroring what feed rows emit; Gender and Age group values like "Male"/"Adult" are case-normalized to the spec enums (male/female/unisex, newborn/infant/toddler/kids/adult) in both scoring and feeds.
-* External cron rebuild endpoint hardened: explicit no-cache headers, ignore_user_abort, and a 1-rebuild-per-minute rate limit (HTTP 429 + Retry-After) as defense-in-depth against a leaked token.
-* Attribute detection rewritten as a unified resolver for simple / variable / variation / affiliate products: reads WC_Product_Attribute objects directly (no legacy get_attribute() quirks or comma-value false rejections), joins multiple values as "Blue/Green" per the merchant-center convention, and applies the same single-value parent rule in scoring as in feed rows; readiness message now adds an actionable note when an attribute exists but its values cannot reach feed rows (option pool or per-variation values never saved).
-
-= 1.0.1 =
-* Duplicate-variant guard: variations that resolve to the same title + deep-link URL (identical option combinations) are exported once per group, as OpenAI expects unique option sets.
-* Consistent option names within a group: variation rows missing an option key used by their siblings are completed from the parent's default attributes instead of shipping a different option-name set.
-* Feeds are leaner: titles/descriptions are decoded from HTML entities ("Tom & Jerry", not "Tom &amp; Jerry"), the description falls back to the short description when the long one is empty, and placeholder return-policy URLs (e.g. the homepage) are omitted rather than claimed as real policies.
-* Image resolver now picks a right-sized JPEG/PNG: the largest generated size inside a 500-2600px quality band, then the scaled attached file — never a 150px thumbnail and never an unscaled multi-megapixel original when a scaled version exists.
-* CSV/JSONL generation hardened for PHP 8.4+ (explicit fputcsv escape argument), a failed atomic rename() is now reported in the dashboard and admin notice instead of silently updating stats, and stale .tmp-* files from failed builds are purged automatically.
-* Duplicate feed rows are counted and shown in generation stats.
-* Admin hygiene: state-changing buttons (Generate feeds, Recalculate scores, Regenerate cron token, Re-run checks) are now proper POST forms instead of GET links; the brand-source meta key no longer gets lowercased (case-sensitive meta keys work); the setup checklist no longer marks policies "done" when the return-policy URL is just the homepage; the Pro teaser has a filterable "Learn more" link (acpfw_pro_url); the "Auto-Fix with AI" chip only appears when an issue is genuinely AI-fixable.
-* AI crawler monitor now warns when the site URL points at localhost/private IPs or plain http://, so dev-site feeds are flagged before being submitted.
-* llms-full.txt now labels external/affiliate products (they cannot appear in the OpenAI purchasable feed), and the readiness card explains why scored products and feed rows can differ (grouped, unpriced, opt-outs).
-* Uninstall: transients, generated JPEG copies, and multisite sites are now cleaned up too; deactivation clears the WP-Cron rebuild event; Requires Plugins: woocommerce header added; translation-ready with a bundled .pot file.
+* Initial release: OpenAI ACP & ChatGPT Shopping product feeds (JSONL/CSV), /llms.txt + /llms-full.txt + /llms-commerce.txt generators, dual-protocol discovery manifests (/.well-known/acp.json & /.well-known/ucp), UCP catalog search REST endpoint, and daily automatic rebuilds.
+* Smart variable product flattening: one purchasable feed row per variation, unique option combinations only, consistent variant_dict keys completed from parent defaults, parent group_id linking, and per-variation add-to-cart deep links in llms-full.txt.
+* Spec-compliant output: WebP/AVIF to JPEG/PNG auto-resolver with right-sized image selection, HTML-entity decoded titles/descriptions, short-description fallback, and a UTF-8 BOM on CSV so Excel renders multibyte titles correctly (JSONL stays BOM-free).
+* Deterministic AI Readiness Score (0-100): 7-point audit with GTIN Modulo-10 validation, products-list badge column with score-band filter and bulk recalculation, and a per-product AI feed metabox (brand, availability, condition, gender and age group overrides, exclude toggle, conversational Q&A surfaced in llms-full.txt and FAQPage JSON-LD).
+* Product JSON-LD enrichment: injects hasMerchantReturnPolicy and shippingDetails into Product schema and publishes FAQPage JSON-LD, extending Yoast SEO and Rank Math output via native filters when active.
+* 1-click brand & GTIN field mapper, AI bot allowlist & crawler monitor, 3-step setup checklist, configurable rebuild schedule (hourly / twice daily / daily / weekly / external cron with secret URL, plus optional rebuild-on-product-change), and opt-in clean uninstall.

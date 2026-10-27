@@ -2,8 +2,8 @@
  * Agentic AI Feed — products list table ("AI Readiness" column).
  *
  * Matches the dashboard design language (WooCommerce purple, soft bands).
- * The column is intentionally sized so the badge, the score meter and the
- * Auto-Fix chip each stay on a single line.
+ * The column is intentionally sized so the badge and the score meter stay
+ * on a single line.
  */
 
 .acpfw-readiness {
@@ -87,35 +87,6 @@
         font-weight: 600;
         color: var(--acpfw-gray, #6b6e76);
         font-variant-numeric: tabular-nums;
-}
-
-/* Line 3 (score < 80) — Auto-Fix chip */
-.acpfw-readiness__fix {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 9px;
-        border-radius: 999px;
-        background: var(--acpfw-purple-soft, #f3eef9);
-        color: var(--acpfw-purple-dark, #674399);
-        font-size: 11px;
-        font-weight: 600;
-        line-height: 1.5;
-        text-decoration: none;
-        white-space: nowrap;
-}
-
-.acpfw-readiness__fix .dashicons {
-        font-size: 13px;
-        width: 13px;
-        height: 13px;
-        margin-top: 1px;
-}
-
-.acpfw-readiness__fix:hover,
-.acpfw-readiness__fix:focus {
-        background: var(--acpfw-purple, #7f54b3);
-        color: #fff;
 }
 
 /* ------------------------------------------------------------ Bands */

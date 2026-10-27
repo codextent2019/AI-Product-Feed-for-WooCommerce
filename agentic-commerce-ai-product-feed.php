@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce
+ * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt
  * Plugin URI:  https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce
  * Description: Generate OpenAI ACP & ChatGPT Shopping product feeds (JSONL/CSV), UCP/ACP discovery manifests, /llms.txt + /llms-full.txt, and per-product AI Readiness Scores. 100% self-hosted — unlimited products, no external SaaS.
- * Version:     1.0.2
+ * Version:     1.0.0
  * Author:      codextent2019
  * Author URI:  https://github.com/codextent2019
  * License:     GPL-2.0-or-later
@@ -23,7 +23,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Core constants.
-define( 'ACPFW_VERSION', '1.0.2' );
+define( 'ACPFW_VERSION', '1.0.0' );
 define( 'ACPFW_PLUGIN_FILE', __FILE__ );
 define( 'ACPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -37,8 +37,8 @@ require_once ACPFW_PLUGIN_DIR . 'includes/class-plugin-core.php';
  * Declare compatibility with WooCommerce feature sets.
  *
  * HPOS (custom order tables) and Cart/Checkout Blocks are both safe here:
- * the free plugin never touches order storage directly, and the Pro checkout
- * endpoints use the WooCommerce order CRUD API exclusively.
+ * the feed-only plugin never touches order storage directly and only reads
+ * catalog data through the WooCommerce CRUD APIs.
  */
 add_action(
         'before_woocommerce_init',

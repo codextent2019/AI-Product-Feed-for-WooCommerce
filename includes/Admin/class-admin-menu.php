@@ -9,7 +9,6 @@
  *  3. AI discovery endpoints (llms.txt family + .well-known manifests)
  *  4. Catalog readiness (score distribution + weakest products)
  *  5. Settings (seller identity, policies, brand/GTIN sources, toggles)
- *  6. Pro teaser
  *
  * Styling lives in assets/css/admin-dashboard.css (WooCommerce-inspired
  * purple design system), enqueued only on this page.
@@ -315,7 +314,6 @@ final class ACPFW_Admin_Menu {
                                 <a href="#acpfw-discovery"><span class="dashicons dashicons-search"></span><?php esc_html_e( 'AI Discovery', 'agentic-commerce-ai-product-feed' ); ?></a>
                                 <a href="#acpfw-readiness"><span class="dashicons dashicons-chart-bar"></span><?php esc_html_e( 'Readiness', 'agentic-commerce-ai-product-feed' ); ?></a>
                                 <a href="#acpfw-settings"><span class="dashicons dashicons-admin-generic"></span><?php esc_html_e( 'Settings', 'agentic-commerce-ai-product-feed' ); ?></a>
-                                <a href="#acpfw-pro"><span class="dashicons dashicons-superhero-alt"></span><?php esc_html_e( 'Pro', 'agentic-commerce-ai-product-feed' ); ?></a>
                         </nav>
 
                         <?php $this->render_setup_checklist( $stats ); ?>
@@ -323,7 +321,6 @@ final class ACPFW_Admin_Menu {
                         <?php $this->render_discovery_section(); ?>
                         <?php $this->render_readiness_section(); ?>
                         <?php $this->render_settings_section(); ?>
-                        <?php $this->render_pro_section(); ?>
                 </div>
                 <?php
         }
@@ -856,33 +853,6 @@ final class ACPFW_Admin_Menu {
                                         </tbody>
                                 </table>
                         </div>
-                </section>
-                <?php
-        }
-
-        /**
-         * Section 6: Pro teaser.
-         *
-         * @return void
-         */
-        private function render_pro_section() {
-                $pro_url = (string) apply_filters( 'acpfw_pro_url', 'https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce' );
-                ?>
-                <section class="acpfw-pro acpfw-section-anchor" id="acpfw-pro">
-                        <p class="acpfw-pro__title">
-                                <span class="dashicons dashicons-superhero-alt"></span>
-                                <?php esc_html_e( 'Go further with Pro — $79/year per site', 'agentic-commerce-ai-product-feed' ); ?>
-                        </p>
-                        <ul>
-                                <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'AI Auto-Fix: bring-your-own-key (OpenAI or Anthropic) one-click rewrites of weak descriptions and missing Q&A.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
-                                <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'Delta sync: price/stock changes reach the feed within minutes, not tomorrow.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
-                                <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'Agentic checkout endpoints: let approved AI agents complete purchases on-site.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
-                                <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'Priority email support.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
-                        </ul>
-                        <p class="acpfw-pro__actions">
-                                <a class="button button-primary" href="<?php echo esc_url( $pro_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Learn more about Pro', 'agentic-commerce-ai-product-feed' ); ?> →</a>
-                        </p>
-                        <p class="acpfw-pro__note"><?php esc_html_e( 'The free version stays 100% self-hosted with unlimited products — Pro never locks your catalog data.', 'agentic-commerce-ai-product-feed' ); ?></p>
                 </section>
                 <?php
         }

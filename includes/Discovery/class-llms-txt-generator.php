@@ -206,8 +206,8 @@ final class ACPFW_LLMS_Txt_Generator {
                 $lines[] = '## ' . __( 'How to buy', 'agentic-commerce-ai-product-feed' );
                 $lines[] = '';
                 $lines[] = sprintf(
-                        /* translators: %s: checkout URL */
-                        __( 'Customers browse products at %1$s and check out at %2$s. Each product page supports standard WooCommerce add-to-cart; an AI agent session (agentic checkout) is planned for the Pro version.', 'agentic-commerce-ai-product-feed' ),
+                        /* translators: 1: shop URL, 2: checkout URL. */
+                        __( 'Customers browse products at %1$s and check out at %2$s. Each product page supports standard WooCommerce add-to-cart, and every purchasable variation in llms-full.txt carries a direct add-to-cart link.', 'agentic-commerce-ai-product-feed' ),
                         self::get_wc_page_url( 'shop' ),
                         self::get_wc_page_url( 'checkout' )
                 );
@@ -437,6 +437,26 @@ final class ACPFW_LLMS_Txt_Generator {
                                 } else {
                                         $lines[] = '- ' . sprintf( /* translators: %d: number of variations */ __( 'Available in %d variants (sizes/colors etc.)', 'agentic-commerce-ai-product-feed' ), $variation_count );
                                 }
+
+                                // Per-variation table with a direct cart deep link per row,
+                                // so an AI assistant can hand the shopper a 1-click checkout
+                                // link without any agentic-checkout integration.
+                                $table      = self::render_variation_table( $product, $currency );
+                                $table_text = is_array( $table ) ? $table['lines'] : array();
+
+                                if ( ! empty( $table_text ) ) {
+                                        $lines[] = '';
+                                        $lines   = array_merge( $lines, $table_text );
+
+                                        if ( $table['omitted'] > 0 ) {
+                                                $lines[] = '';
+                                                $lines[] = sprintf(
+                                                        /* translators: %d: number of additional variations. */
+                                                        __( '+ %1$d more purchasable variants — see the product page.', 'agentic-commerce-ai-product-feed' ),
+                                                        $table['omitted']
+                                                );
+                                        }
+                                }
                         }
                 }
 
@@ -497,6 +517,87 @@ final class ACPFW_LLMS_Txt_Generator {
         }
 
         /**
+         * Markdown table of purchasable variations with a direct add-to-cart
+         * deep link per row (SKU | Variant | Price | Availability | Cart).
+         *
+         * Rows are capped to keep llms-full.txt proportionate on huge matrices;
+         * the caller prints a "+ N more" note when rows were omitted.
+         *
+         * @param WC_Product $product  Variable product object.
+         * @param string     $currency Currency code.
+         * @return array { lines: string[], omitted: int }
+         */
+        private static function render_variation_table( $product, $currency ) {
+                $max_rows  = 20;
+                $shown     = 0;
+                $omitted   = 0;
+                $rows      = array();
+
+                foreach ( $product->get_children() as $child_id ) {
+                        $variation = wc_get_product( $child_id );
+
+                        if ( ! $variation instanceof WC_Product || ! $variation->is_purchasable() ) {
+                                continue;
+                        }
+
+                        if ( $shown >= $max_rows ) {
+                                $omitted++;
+                                continue;
+                        }
+
+                        $variant_bits = array();
+
+                        foreach ( $variation->get_attributes() as $attr_name => $attr_value ) {
+                                if ( '' === (string) $attr_value ) {
+                                        continue;
+                                }
+
+                                $label         = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( (string) $attr_name, $product ) : (string) $attr_name;
+                                $variant_bits[] = self::clean( $label . ': ' . $attr_value, 60 );
+                        }
+
+                        $sku = (string) $variation->get_sku();
+
+                        if ( '' === $sku ) {
+                                $sku = 'wc_' . $child_id;
+                        }
+
+                        $cart_url = add_query_arg(
+                                array(
+                                        'add-to-cart' => (int) $child_id,
+                                        'quantity'    => '1',
+                                ),
+                                home_url( '/' )
+                        );
+
+                        $rows[] = '| ' . self::clean( $sku, 60 )
+                                . ' | ' . ( ! empty( $variant_bits ) ? implode( ', ', $variant_bits ) : __( 'Standard', 'agentic-commerce-ai-product-feed' ) )
+                                . ' | ' . self::resolve_price_text( $variation, $currency )
+                                . ' | ' . self::availability_label( $variation )
+                                . ' | [' . __( 'Add to cart', 'agentic-commerce-ai-product-feed' ) . '](' . esc_url_raw( $cart_url ) . ') |';
+
+                        $shown++;
+                }
+
+                if ( empty( $rows ) ) {
+                        return array(
+                                'lines'   => array(),
+                                'omitted' => 0,
+                        );
+                }
+
+                $lines = array(
+                        '| ' . __( 'SKU', 'agentic-commerce-ai-product-feed' ) . ' | ' . __( 'Variant', 'agentic-commerce-ai-product-feed' ) . ' | ' . __( 'Price', 'agentic-commerce-ai-product-feed' ) . ' | ' . __( 'Availability', 'agentic-commerce-ai-product-feed' ) . ' | ' . __( 'Cart', 'agentic-commerce-ai-product-feed' ) . ' |',
+                        '| --- | --- | --- | --- | --- |',
+                );
+
+                return array(
+                        'lines'   => array_merge( $lines, $rows ),
+                        'omitted' => $omitted,
+                );
+        }
+
+        /**
          * Price text for a product (handles variable ranges and sales).
          * Always includes the currency for real prices; informational
          * fallbacks ("See product page") stay plain so the currency is never
@@ -551,6 +652,87 @@ final class ACPFW_LLMS_Txt_Generator {
                         default:
                                 return __( 'Unknown', 'agentic-commerce-ai-product-feed' );
                 }
+        }
+
+        /**
+         * Append the commerce catalog block to a Yoast / Rank Math llms.txt.
+         *
+         * Hooked to wpseo_llmstxt_content and rank_math/llmstxt/content so
+         * the SEO plugin keeps owning /llms.txt while our feeds, discovery
+         * endpoints and commerce guide ride along in the same document.
+         *
+         * @param string $content Existing llms.txt content from the SEO plugin.
+         * @return string
+         */
+        public static function filter_seo_llms_txt( $content ) {
+                if ( 'yes' !== acpfw()->get_setting( 'enable_llms_txt', 'yes' ) ) {
+                        return $content;
+                }
+
+                $appendix = self::build_seo_appendix();
+
+                if ( '' === $appendix ) {
+                        return $content;
+                }
+
+                return rtrim( (string) $content ) . "\n\n" . $appendix . "\n";
+        }
+
+        /**
+         * Commerce appendix appended to SEO-plugin llms.txt output.
+         *
+         * @return string Empty when no feeds have been generated yet.
+         */
+        private static function build_seo_appendix() {
+                $feed_urls = array(
+                        'jsonl' => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
+                        'csv'   => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'csv' ),
+                );
+
+                if ( '' === $feed_urls['jsonl'] ) {
+                        return '';
+                }
+
+                $settings = acpfw()->get_settings();
+                $seller   = (string) ( isset( $settings['seller_name'] ) && '' !== $settings['seller_name'] ? $settings['seller_name'] : get_bloginfo( 'name' ) );
+                $currency = function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : '';
+                $shipping = (string) ( isset( $settings['shipping_summary'] ) ? $settings['shipping_summary'] : '' );
+                $returns  = (string) ( isset( $settings['return_policy_url'] ) ? $settings['return_policy_url'] : '' );
+
+                $lines   = array();
+                $lines[] = '## ' . __( 'Agentic Commerce & AI Product Feed', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '';
+                $lines[] = '- [OpenAI ACP Product Feed (JSONL)](' . $feed_urls['jsonl'] . '): ' . __( 'Full variant-level catalog following the OpenAI Commerce Spec.', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [OpenAI Product Feed (CSV)](' . $feed_urls['csv'] . '): ' . __( 'The same catalog as a spreadsheet-friendly CSV.', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [' . __( 'Full Markdown Product Catalog', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/llms-full.txt' ) . '): ' . __( 'Complete product specifications, live pricing, variation stock and add-to-cart links.', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [' . __( 'Commerce guide', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/llms-commerce.txt' ) . '): ' . __( 'Shipping, payment, return and checkout terms.', 'agentic-commerce-ai-product-feed' );
+                $lines[] = '- [' . __( 'ACP Discovery Profile', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/.well-known/acp.json' ) . ')';
+                $lines[] = '- [' . __( 'UCP Discovery Profile', 'agentic-commerce-ai-product-feed' ) . '](' . home_url( '/.well-known/ucp' ) . ')';
+
+                $facts = array();
+
+                if ( '' !== $seller ) {
+                        $facts[] = __( 'Store', 'agentic-commerce-ai-product-feed' ) . ': ' . $seller;
+                }
+
+                if ( '' !== $currency ) {
+                        $facts[] = __( 'Currency', 'agentic-commerce-ai-product-feed' ) . ': ' . $currency;
+                }
+
+                if ( '' !== $shipping ) {
+                        $facts[] = __( 'Shipping', 'agentic-commerce-ai-product-feed' ) . ': ' . self::clean( $shipping, 200 );
+                }
+
+                if ( '' !== $returns && ! ACPFW_Product_Mapper::is_placeholder_policy_url( $returns ) ) {
+                        $facts[] = __( 'Returns', 'agentic-commerce-ai-product-feed' ) . ': ' . $returns;
+                }
+
+                if ( ! empty( $facts ) ) {
+                        $lines[] = '';
+                        $lines[] = implode( ' | ', $facts );
+                }
+
+                return implode( "\n", $lines );
         }
 
         /**

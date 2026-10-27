@@ -49,7 +49,7 @@ final class ACPFW_Well_Known_Router {
                                 self::serve_static_llms( self::llms_file_path( 'llms-commerce.txt' ), 'text/plain', array( 'ACPFW_LLMS_Txt_Generator', 'generate_llms_commerce_txt' ) );
                                 break;
                         case 'feed_jsonl':
-                                self::serve_feed_file( 'jsonl', 'application/jsonl' );
+                                self::serve_feed_file( 'jsonl', 'application/x-ndjson' );
                                 break;
                         case 'feed_csv':
                                 self::serve_feed_file( 'csv', 'text/csv' );
@@ -82,21 +82,25 @@ final class ACPFW_Well_Known_Router {
 
                 $manifest = array(
                         'protocol'     => 'acp',
-                        'version'      => '1.0',
-                        'store'        => array(
-                                'name'        => (string) ( isset( $settings['seller_name'] ) && '' !== $settings['seller_name'] ? $settings['seller_name'] : get_bloginfo( 'name' ) ),
-                                'description' => (string) get_bloginfo( 'description' ),
-                                'url'         => home_url( '/' ),
-                                'logo'        => (string) get_site_icon_url(),
-                        ),
-                        'capabilities' => array(
-                                'product_feed'     => true,
-                                'agentic_checkout' => false,
+                        'version'      => '2026-04-17',
+                        'merchant'     => array(
+                                'name'              => (string) ( isset( $settings['seller_name'] ) && '' !== $settings['seller_name'] ? $settings['seller_name'] : get_bloginfo( 'name' ) ),
+                                'url'               => home_url( '/' ),
+                                'currency'          => function_exists( 'get_woocommerce_currency' ) ? get_woocommerce_currency() : 'USD',
+                                'return_policy_url' => (string) ( isset( $settings['return_policy_url'] ) ? $settings['return_policy_url'] : '' ),
+                                'description'       => (string) get_bloginfo( 'description' ),
+                                'logo'              => (string) get_site_icon_url(),
                         ),
                         'feeds'        => array(
-                                'openai_jsonl' => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
-                                'openai_csv'   => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'csv' ),
-                                'last_built'   => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
+                                'products_jsonl' => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
+                                'products_csv'   => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'csv' ),
+                                'llms_full_txt'  => home_url( '/llms-full.txt' ),
+                                'last_built'     => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
+                        ),
+                        'capabilities' => array(
+                                'catalog_search'    => true,
+                                'cart_deeplink'     => true,
+                                'checkout_sessions' => false,
                         ),
                         'discovery'    => array(
                                 'llms_txt'          => home_url( '/llms.txt' ),
@@ -135,6 +139,8 @@ final class ACPFW_Well_Known_Router {
                 $settings = acpfw()->get_settings();
                 $stats    = ACPFW_OpenAI_Feed_Generator::get_stats();
 
+                $search_url = function_exists( 'rest_url' ) ? rest_url( 'acpfw/v1/ucp/catalog/search' ) : home_url( '/wp-json/acpfw/v1/ucp/catalog/search' );
+
                 $manifest = array(
                         'protocol'     => 'ucp',
                         'version'      => '1.0',
@@ -144,16 +150,18 @@ final class ACPFW_Well_Known_Router {
                                 'url'         => home_url( '/' ),
                         ),
                         'capabilities' => array(
-                                'browse_catalog' => true,
-                                'checkout'       => false,
-                                'order_status'   => false,
+                                'browse_catalog'                   => true,
+                                'dev.ucp.shopping.catalog.search' => $search_url,
+                                'checkout'                         => false,
+                                'order_status'                     => false,
                         ),
                         'endpoints'    => array(
-                                'catalog_feed'  => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
-                                'llms_txt'      => home_url( '/llms.txt' ),
-                                'llms_full'     => home_url( '/llms-full.txt' ),
-                                'llms_commerce' => home_url( '/llms-commerce.txt' ),
-                                'last_built'    => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
+                                'catalog_feed'   => ACPFW_OpenAI_Feed_Generator::get_feed_url( 'jsonl' ),
+                                'catalog_search' => $search_url,
+                                'llms_txt'       => home_url( '/llms.txt' ),
+                                'llms_full'      => home_url( '/llms-full.txt' ),
+                                'llms_commerce'  => home_url( '/llms-commerce.txt' ),
+                                'last_built'     => isset( $stats['generated_at'] ) ? gmdate( 'c', (int) $stats['generated_at'] ) : '',
                         ),
                         'updated_at'   => gmdate( 'c' ),
                 );
