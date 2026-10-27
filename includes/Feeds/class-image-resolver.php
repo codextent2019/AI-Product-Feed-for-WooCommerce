@@ -6,8 +6,10 @@
  * serve WebP (via optimization plugins or core conversion), so this resolver
  * walks a small decision chain to find (or generate) a compliant copy:
  *
- *  1. Original attachment is already JPEG/PNG  -> ship the original URL.
- *  2. A JPEG/PNG sibling exists among the generated thumbnail sizes -> ship it.
+ *  1. Original is JPEG/PNG -> pick the best-sized compliant candidate
+ *     (largest generated size within a 500-2600px quality band, else the
+ *     scaled attached file, else the untouched original).
+ *  2. Original is WebP/AVIF -> best compliant JPEG/PNG among generated sizes.
  *  3. A JPEG/PNG file sits next to the converted file on disk (kept as backup
  *     by most optimization plugins) -> ship its URL.
  *  4. Generate a JPEG copy on the fly with WP_Image_Editor (cached in meta).
@@ -47,6 +49,12 @@ final class ACPFW_Image_Resolver {
                 return (string) apply_filters( 'acpfw_feed_image_url', $url, $attachment_id );
         }
 
+        /** Longest edge below which an image is considered too small for AI carousels. */
+        const MIN_EDGE = 500;
+
+        /** Longest edge above which an image is considered wastefully large (unscaled originals). */
+        const MAX_EDGE = 2600;
+
         /**
          * Internal resolution chain.
          *
@@ -62,31 +70,18 @@ final class ACPFW_Image_Resolver {
 
                 $ext = strtolower( (string) pathinfo( $file, PATHINFO_EXTENSION ) );
 
-                // Step 1: original is already compliant.
+                // Step 1: original is already compliant — pick a sensibly sized
+                // compliant candidate (never a 150px thumbnail, never a 6000px
+                // unscaled original when a scaled version exists).
                 if ( in_array( $ext, array( 'jpg', 'jpeg', 'png' ), true ) ) {
-                        if ( function_exists( 'wp_get_original_image_url' ) ) {
-                                $original = wp_get_original_image_url( $attachment_id );
-                                if ( $original ) {
-                                        return (string) $original;
-                                }
-                        }
-
-                        return (string) wp_get_attachment_url( $attachment_id );
+                        return self::best_compliant_url( $attachment_id, $file );
                 }
 
-                // Step 2: any compliant size among generated thumbnails.
-                $meta = wp_get_attachment_metadata( $attachment_id );
-                if ( ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
-                        foreach ( $meta['sizes'] as $size ) {
-                                if ( empty( $size['file'] ) ) {
-                                        continue;
-                                }
+                // Step 2: original is WebP/AVIF — best compliant generated size.
+                $size_url = self::best_size_url( $attachment_id, $file );
 
-                                $size_ext = strtolower( (string) pathinfo( $size['file'], PATHINFO_EXTENSION ) );
-                                if ( in_array( $size_ext, array( 'jpg', 'jpeg', 'png' ), true ) ) {
-                                        return self::uploads_url_for( ltrim( dirname( $file ) . '/' . $size['file'], './' ) );
-                                }
-                        }
+                if ( '' !== $size_url ) {
+                        return $size_url;
                 }
 
                 // Step 3: compliant sibling next to the converted file on disk.
@@ -108,6 +103,129 @@ final class ACPFW_Image_Resolver {
 
                 // Step 5: last resort — ship what exists.
                 return (string) wp_get_attachment_url( $attachment_id );
+        }
+
+        /**
+         * Best compliant URL for an attachment whose original is already
+         * JPEG/PNG: prefers a generated size within the quality band, then
+         * the (possibly -scaled) attached file, then the untouched original.
+         *
+         * @param int    $attachment_id Attachment ID.
+         * @param string $file          Relative attached-file path.
+         * @return string
+         */
+        private static function best_compliant_url( $attachment_id, $file ) {
+                $size_url = self::best_size_url( $attachment_id, $file );
+
+                if ( '' !== $size_url ) {
+                        return $size_url;
+                }
+
+                // The attached file URL is the scaled version when WordPress
+                // downscaled a huge original ("big image threshold").
+                $attached_url = (string) wp_get_attachment_url( $attachment_id );
+
+                if ( '' !== $attached_url ) {
+                        return $attached_url;
+                }
+
+                if ( function_exists( 'wp_get_original_image_url' ) ) {
+                        $original = wp_get_original_image_url( $attachment_id );
+                        if ( $original ) {
+                                return (string) $original;
+                        }
+                }
+
+                return (string) wp_get_attachment_url( $attachment_id );
+        }
+
+        /**
+         * Pick the best JPEG/PNG URL among the attachment's generated sizes.
+         *
+         * Candidates are scored by area: inside the quality band
+         * (MIN_EDGE..MAX_EDGE on the longest edge) the LARGEST wins; when
+         * nothing fits the band, the smallest oversized candidate beats a
+         * giant original. Tiny thumbnails only win when nothing else exists.
+         *
+         * @param int    $attachment_id Attachment ID.
+         * @param string $file          Relative attached-file path.
+         * @return string '' when no compliant size exists.
+         */
+        private static function best_size_url( $attachment_id, $file ) {
+                $meta = wp_get_attachment_metadata( $attachment_id );
+
+                if ( empty( $meta['sizes'] ) || ! is_array( $meta['sizes'] ) ) {
+                        return '';
+                }
+
+                $in_band  = array();
+                $too_big  = array();
+
+                foreach ( $meta['sizes'] as $size ) {
+                        if ( empty( $size['file'] ) ) {
+                                continue;
+                        }
+
+                        $size_ext = strtolower( (string) pathinfo( $size['file'], PATHINFO_EXTENSION ) );
+
+                        if ( ! in_array( $size_ext, array( 'jpg', 'jpeg', 'png' ), true ) ) {
+                                continue;
+                        }
+
+                        $width  = isset( $size['width'] ) ? (int) $size['width'] : 0;
+                        $height = isset( $size['height'] ) ? (int) $size['height'] : 0;
+                        $area   = max( 1, $width * $height );
+                        $edge   = max( $width, $height );
+
+                        $candidate = array(
+                                'url'  => self::uploads_url_for( ltrim( dirname( $file ) . '/' . $size['file'], './' ) ),
+                                'area' => $area,
+                        );
+
+                        if ( $edge >= self::MIN_EDGE && $edge <= self::MAX_EDGE ) {
+                                $in_band[] = $candidate;
+                        } elseif ( $edge > self::MAX_EDGE ) {
+                                $too_big[] = $candidate;
+                        }
+                        // Smaller than MIN_EDGE: kept only as an implicit last
+                        // resort (OpenAI quality floor) — not selected here.
+                }
+
+                if ( ! empty( $in_band ) ) {
+                        usort( $in_band, array( __CLASS__, 'sort_by_area_desc' ) );
+
+                        return $in_band[0]['url'];
+                }
+
+                if ( ! empty( $too_big ) ) {
+                        usort( $too_big, array( __CLASS__, 'sort_by_area_asc' ) );
+
+                        return $too_big[0]['url'];
+                }
+
+                return '';
+        }
+
+        /**
+         * usort callback: area descending.
+         *
+         * @param array $a Candidate.
+         * @param array $b Candidate.
+         * @return int
+         */
+        private static function sort_by_area_desc( $a, $b ) {
+                return $b['area'] <=> $a['area'];
+        }
+
+        /**
+         * usort callback: area ascending.
+         *
+         * @param array $a Candidate.
+         * @param array $b Candidate.
+         * @return int
+         */
+        private static function sort_by_area_asc( $a, $b ) {
+                return $a['area'] <=> $b['area'];
         }
 
         /**

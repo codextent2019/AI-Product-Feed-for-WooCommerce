@@ -5,8 +5,14 @@
  *
  * Badge bands per spec:
  *  - 80-100  green  "AI Ready"
- *  - 50-79   amber  "Needs Polish" (+ Auto-Fix affordance)
- *  - 0-49    red    "AI Blocked"  (+ Auto-Fix affordance)
+ *  - 50-79   amber  "Needs Polish"
+ *  - 0-49    red    "AI Blocked"
+ *
+ * The Auto-Fix chip only appears when at least one open issue is actually
+ * AI-fixable (thin description, missing structured attributes, missing Q&A).
+ * Issues a merchant must solve with real data (price, image, identifiers)
+ * do not show a chip, so the affordance never fires on products Pro cannot
+ * genuinely improve.
  *
  * All styling lives in assets/css/admin-list.css, enqueued on the
  * products list screen only (column width, bands, meter, Auto-Fix chip).
@@ -146,7 +152,15 @@ final class ACPFW_Product_List_Column {
                 $pct = max( 0, min( 100, $score ) );
                 $fix = '';
 
-                if ( $score < 80 ) {
+                /*
+                 * Chip only for AI-fixable issues (Pro Auto-Fix rewrites
+                 * descriptions, extracts attributes, generates Q&A). Showing
+                 * it on every sub-80 row was noise: a product blocked by a
+                 * missing price or image cannot be fixed by AI.
+                 */
+                $fixable_issues = array( 'DESC_LEN', 'ATTRS', 'FAQ_SCHEMA' );
+
+                if ( $score < 80 && is_array( $issues ) && ! empty( array_intersect( $fixable_issues, $issues ) ) ) {
                         $fix = sprintf(
                                 '<a class="acpfw-readiness__fix" href="%1$s" title="%2$s"><span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>%3$s</a>',
                                 esc_url( admin_url( 'admin.php?page=acpfw-feed' ) ),

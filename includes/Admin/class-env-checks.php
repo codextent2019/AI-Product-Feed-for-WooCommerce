@@ -94,6 +94,10 @@ final class ACPFW_Env_Checks {
 
                 $results = array();
 
+                // 0. Public site URL? A dev site on localhost/private IPs can
+                // generate perfect feeds that no AI crawler can ever fetch.
+                $results['site_url'] = self::check_site_url();
+
                 // 1. Search engines discouraged?
                 $blog_public = (string) get_option( 'blog_public', '1' );
 
@@ -129,6 +133,52 @@ final class ACPFW_Env_Checks {
                 set_transient( self::CACHE_KEY, $results, 30 * MINUTE_IN_SECONDS );
 
                 return $results;
+        }
+
+        /**
+         * Site URL sanity: publicly resolvable host + HTTPS scheme.
+         *
+         * Feeds generated on http://localhost are fine during development,
+         * but the merchant must be warned before submitting them anywhere.
+         *
+         * @return array
+         */
+        private static function check_site_url() {
+                $host   = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+                $scheme = (string) wp_parse_url( home_url(), PHP_URL_SCHEME );
+
+                $private = in_array( $host, array( 'localhost', '127.0.0.1', '::1', '0.0.0.0' ), true )
+                        || '.localhost' === substr( $host, -10 )
+                        || '.local' === substr( $host, -6 )
+                        || (bool) preg_match( '/^192\.168\./', $host )
+                        || (bool) preg_match( '/^10\./', $host )
+                        || (bool) preg_match( '/^172\.(1[6-9]|2[0-9]|3[01])\./', $host );
+
+                if ( $private ) {
+                        return array(
+                                'status' => 'fail',
+                                'label'  => __( 'Site URL is publicly reachable', 'agentic-commerce-ai-product-feed' ),
+                                'detail' => sprintf(
+                                        /* translators: %s: current site host, e.g. localhost */
+                                        __( 'Your WordPress address points at "%s" — a private/dev host. Every feed row and llms.txt link carries this hostname, so AI crawlers and OpenAI cannot fetch anything. Move the site to a public domain (Settings > General) before submitting the feed.', 'agentic-commerce-ai-product-feed' ),
+                                        $host
+                                ),
+                        );
+                }
+
+                if ( 'https' !== strtolower( $scheme ) ) {
+                        return array(
+                                'status' => 'warn',
+                                'label'  => __( 'Site URL uses HTTPS', 'agentic-commerce-ai-product-feed' ),
+                                'detail' => __( 'Your site URL starts with http://. Most AI shopping channels expect https:// product and image URLs — install an SSL certificate and update the WordPress address before going live.', 'agentic-commerce-ai-product-feed' ),
+                        );
+                }
+
+                return array(
+                        'status' => 'pass',
+                        'label'  => __( 'Site URL is publicly reachable', 'agentic-commerce-ai-product-feed' ),
+                        'detail' => __( 'Your WordPress address is a public HTTPS hostname — feeds and discovery URLs are fetchable from the internet.', 'agentic-commerce-ai-product-feed' ),
+                );
         }
 
         /**
@@ -283,10 +333,14 @@ final class ACPFW_Env_Checks {
                 </ul>
 
                 <p style="margin:14px 0 0;">
-                        <a class="button acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_env_recheck' ), 'acpfw_env_recheck' ) ); ?>">
-                                <span class="dashicons dashicons-update-alt" style="margin-top:3px;"></span>
-                                <?php esc_html_e( 'Re-run checks', 'agentic-commerce-ai-product-feed' ); ?>
-                        </a>
+                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="acpfw-inline-form">
+                                <input type="hidden" name="action" value="acpfw_env_recheck" />
+                                <?php wp_nonce_field( 'acpfw_env_recheck' ); ?>
+                                <button type="submit" class="button acpfw-btn">
+                                        <span class="dashicons dashicons-update-alt" style="margin-top:3px;"></span>
+                                        <?php esc_html_e( 'Re-run checks', 'agentic-commerce-ai-product-feed' ); ?>
+                                </button>
+                        </form>
                 </p>
                 <?php
         }

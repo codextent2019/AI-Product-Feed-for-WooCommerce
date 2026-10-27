@@ -102,12 +102,14 @@ final class ACPFW_OpenAI_Feed_Generator {
                         );
                 }
 
-                // CSV header.
+                // CSV header. All five fputcsv arguments are passed explicitly:
+                // omitting $escape triggers a deprecation on PHP 8.4+.
                 $columns = ACPFW_Product_Mapper::csv_columns();
-                fputcsv( $csv_handle, $columns ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fputcsv( $csv_handle, $columns, ',', '"', '\\' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
 
                 $row_count     = 0;
                 $product_count = 0;
+                $duplicates    = 0;
                 $page          = 1;
 
                 do {
@@ -146,6 +148,7 @@ final class ACPFW_OpenAI_Feed_Generator {
 
                                 if ( 'variable' === $type ) {
                                         $children = $product->get_children();
+                                        $seen     = array();
 
                                         foreach ( $children as $child_id ) {
                                                 $variation = wc_get_product( $child_id );
@@ -159,6 +162,22 @@ final class ACPFW_OpenAI_Feed_Generator {
                                                 }
 
                                                 $row = ACPFW_Product_Mapper::map_variation( $variation, $product );
+
+                                                /*
+                                                 * Duplicate-variant guard: OpenAI expects unique
+                                                 * option combinations per group. Two variations that
+                                                 * resolve to the same title + deep-link URL produce
+                                                 * byte-identical rows, so only the first is exported.
+                                                 */
+                                                $dedupe_key = md5( $row['group_id'] . '|' . $row['title'] . '|' . $row['url'] );
+
+                                                if ( isset( $seen[ $dedupe_key ] ) ) {
+                                                        $duplicates++;
+                                                        continue;
+                                                }
+
+                                                $seen[ $dedupe_key ] = true;
+
                                                 self::write_row( $jsonl_handle, $csv_handle, $row );
                                                 $row_count++;
                                         }
@@ -184,15 +203,24 @@ final class ACPFW_OpenAI_Feed_Generator {
                 fclose( $jsonl_handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
                 fclose( $csv_handle );   // phpcs:ignore WordPress.WP.AlternativeFunctions.
 
-                // Atomic swap: crawlers only ever see complete files.
-                rename( $tmp_jsonl, $jsonl_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.
-                rename( $tmp_csv, $csv_path );     // phpcs:ignore WordPress.PHP.NoSilencedErrors.
+                /*
+                 * Atomic swap: crawlers only ever see complete files. A failed
+                 * rename() must never be silent — the stats would otherwise
+                 * report success while the old (or missing) feed is served.
+                 */
+                $jsonl_ok = @rename( $tmp_jsonl, $jsonl_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.
+                $csv_ok   = @rename( $tmp_csv, $csv_path );     // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions.
 
                 $stats = array(
                         'rows'         => $row_count,
                         'products'     => $product_count,
+                        'duplicates'   => $duplicates,
                         'generated_at' => time(),
                 );
+
+                if ( ! $jsonl_ok || ! $csv_ok ) {
+                        $stats['error'] = 'rename_failed';
+                }
 
                 update_option( 'acpfw_feed_stats', $stats, false );
 
@@ -241,7 +269,7 @@ final class ACPFW_OpenAI_Feed_Generator {
                         $csv_row[] = $value;
                 }
 
-                fputcsv( $csv_handle, $csv_row ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                fputcsv( $csv_handle, $csv_row, ',', '"', '\\' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
         }
 
         /**

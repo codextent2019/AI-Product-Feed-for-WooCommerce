@@ -85,13 +85,17 @@ final class ACPFW_Admin_Menu {
                 check_admin_referer( 'acpfw_generate_feeds' );
 
                 // Feeds first; the acpfw_feeds_generated hook refreshes llms*.txt.
-                ACPFW_OpenAI_Feed_Generator::generate();
+                $stats = ACPFW_OpenAI_Feed_Generator::generate();
+
+                // Surface atomic-write failures (e.g. rename() denied on the
+                // uploads dir) instead of celebrating a broken build.
+                $notice = ( isset( $stats['error'] ) && '' !== $stats['error'] ) ? 'generate_error' : 'generated';
 
                 wp_safe_redirect(
                         add_query_arg(
                                 array(
                                         'page'         => 'acpfw-feed',
-                                        'acpfw_notice' => 'generated',
+                                        'acpfw_notice' => $notice,
                                 ),
                                 admin_url( 'admin.php' )
                         )
@@ -117,7 +121,10 @@ final class ACPFW_Admin_Menu {
                         'return_policy_url' => isset( $_POST['return_policy_url'] ) ? esc_url_raw( wp_unslash( $_POST['return_policy_url'] ) ) : '',
                         'shipping_summary'  => isset( $_POST['shipping_summary'] ) ? sanitize_textarea_field( wp_unslash( $_POST['shipping_summary'] ) ) : '',
                         'default_brand'     => isset( $_POST['default_brand'] ) ? sanitize_text_field( wp_unslash( $_POST['default_brand'] ) ) : '',
-                        'brand_source'      => isset( $_POST['brand_source'] ) ? sanitize_key( wp_unslash( $_POST['brand_source'] ) ) : 'auto',
+                        // sanitize_text_field, NOT sanitize_key: meta keys are
+                        // case-sensitive, and lowercasing "_BrandName" would
+                        // silently break the brand lookup.
+                        'brand_source'      => isset( $_POST['brand_source'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['brand_source'] ) ) ) : 'auto',
                         'gtin_source'       => isset( $_POST['gtin_source'] ) ? sanitize_text_field( wp_unslash( $_POST['gtin_source'] ) ) : '_global_unique_id',
                         'mpn_source'        => isset( $_POST['mpn_source'] ) ? sanitize_text_field( wp_unslash( $_POST['mpn_source'] ) ) : '',
                         'mpn_sku_fallback'  => ( isset( $_POST['mpn_sku_fallback'] ) && 'yes' === $_POST['mpn_sku_fallback'] ) ? 'yes' : 'no',
@@ -253,6 +260,15 @@ final class ACPFW_Admin_Menu {
                         'cron_token'     => __( 'A new external cron rebuild token was generated. Update your cron job URL if it calls the old one.', 'agentic-commerce-ai-product-feed' ),
                 );
 
+                if ( 'generate_error' === $notice ) {
+                        printf(
+                                '<div class="notice notice-error is-dismissible"><p>%s</p></div>',
+                                esc_html__( 'Feed generation finished but the final files could not be moved into place (rename failed). Check the write permissions of wp-content/uploads/acpfw-feeds/ and try again — the previous feed files are still being served.', 'agentic-commerce-ai-product-feed' )
+                        );
+
+                        return;
+                }
+
                 if ( 'rescored' === $notice ) {
                         // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                         $count = absint( $_GET['acpfw_count'] );
@@ -346,9 +362,13 @@ final class ACPFW_Admin_Menu {
                                                 ?>
                                         </span>
                                 <?php endif; ?>
-                                <a class="button button-hero" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_generate_feeds' ), 'acpfw_generate_feeds' ) ); ?>">
-                                        <?php esc_html_e( 'Generate feeds', 'agentic-commerce-ai-product-feed' ); ?>
-                                </a>
+                                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="acpfw-inline-form">
+                                        <input type="hidden" name="action" value="acpfw_generate_feeds" />
+                                        <?php wp_nonce_field( 'acpfw_generate_feeds' ); ?>
+                                        <button type="submit" class="button button-hero">
+                                                <?php esc_html_e( 'Generate feeds', 'agentic-commerce-ai-product-feed' ); ?>
+                                        </button>
+                                </form>
                         </div>
                 </div>
                 <?php
@@ -363,10 +383,24 @@ final class ACPFW_Admin_Menu {
         private function render_setup_checklist( $stats ) {
                 $settings = acpfw()->get_settings();
 
-                $policies_done  = ( ! empty( $settings['return_policy_url'] ) || ! empty( $settings['shipping_summary'] ) );
+                /*
+                 * A return policy that only points at the homepage is a
+                 * placeholder, not a policy: it must not complete this step.
+                 */
+                $policy_url    = (string) ( isset( $settings['return_policy_url'] ) ? $settings['return_policy_url'] : '' );
+                $policy_set    = ( '' !== $policy_url && ! ACPFW_Product_Mapper::is_placeholder_policy_url( $policy_url ) );
+                $policy_empty  = ( '' === $policy_url );
+                $shipping_done = ( '' !== trim( (string) ( isset( $settings['shipping_summary'] ) ? $settings['shipping_summary'] : '' ) ) );
+                $policies_done = ( $policy_set || $shipping_done );
                 $feeds_done     = ! empty( $stats['generated_at'] );
                 $llms_path      = trailingslashit( ACPFW_Plugin_Core::get_feed_directory() ) . ACPFW_LLMS_Txt_Generator::get_llms_filename();
                 $discovery_done = file_exists( $llms_path );
+
+                $policy_text = __( 'Add your return policy URL and a shipping summary in Settings — AI agents quote them to shoppers.', 'agentic-commerce-ai-product-feed' );
+
+                if ( ! $policy_empty && ! $policy_set ) {
+                        $policy_text = __( 'Your return policy URL points at your homepage — that is not a real policy page. Create a dedicated returns page and paste its URL in Settings.', 'agentic-commerce-ai-product-feed' );
+                }
 
                 $steps = array(
                         array(
@@ -375,7 +409,7 @@ final class ACPFW_Admin_Menu {
                                 'title'  => __( 'Describe your store policies', 'agentic-commerce-ai-product-feed' ),
                                 'text'   => $policies_done
                                         ? __( 'Return policy / shipping summary saved. AI assistants use these to answer pre-sale questions.', 'agentic-commerce-ai-product-feed' )
-                                        : __( 'Add your return policy URL and a shipping summary in Settings — AI agents quote them to shoppers.', 'agentic-commerce-ai-product-feed' ),
+                                        : $policy_text,
                                 'anchor' => '#acpfw-settings',
                                 'button' => $policies_done ? '' : __( 'Open settings', 'agentic-commerce-ai-product-feed' ),
                         ),
@@ -461,10 +495,14 @@ final class ACPFW_Admin_Menu {
                                 </dl>
 
                                 <p class="acpfw-card__actions">
-                                        <a class="button button-primary acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_generate_feeds' ), 'acpfw_generate_feeds' ) ); ?>">
-                                                <span class="dashicons dashicons-update-alt"></span>
-                                                <?php $generated ? esc_html_e( 'Regenerate feeds now', 'agentic-commerce-ai-product-feed' ) : esc_html_e( 'Generate feeds now', 'agentic-commerce-ai-product-feed' ); ?>
-                                        </a>
+                                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="acpfw-inline-form">
+                                                <input type="hidden" name="action" value="acpfw_generate_feeds" />
+                                                <?php wp_nonce_field( 'acpfw_generate_feeds' ); ?>
+                                                <button type="submit" class="button button-primary acpfw-btn">
+                                                        <span class="dashicons dashicons-update-alt"></span>
+                                                        <?php $generated ? esc_html_e( 'Regenerate feeds now', 'agentic-commerce-ai-product-feed' ) : esc_html_e( 'Generate feeds now', 'agentic-commerce-ai-product-feed' ); ?>
+                                                </button>
+                                        </form>
 
                                         <?php if ( $generated ) : ?>
                                                 <span class="acpfw-card__meta">
@@ -616,7 +654,7 @@ final class ACPFW_Admin_Menu {
                 <section class="acpfw-card acpfw-section-anchor" id="acpfw-readiness">
                         <div class="acpfw-card__header">
                                 <h2 class="acpfw-card__title"><span class="dashicons dashicons-chart-bar"></span><?php esc_html_e( 'Catalog AI readiness', 'agentic-commerce-ai-product-feed' ); ?></h2>
-                                <span class="acpfw-card__hint"><?php esc_html_e( 'Every product is scored 0-100 against seven AI-channel checks; scores update live as you edit.', 'agentic-commerce-ai-product-feed' ); ?></span>
+                                <span class="acpfw-card__hint"><?php esc_html_e( 'Every product is scored 0-100 against seven AI-channel checks; scores update live as you edit. Scores cover your whole catalog — the product feed additionally skips grouped products, unpriced variations and opt-outs, so feed row counts can be lower.', 'agentic-commerce-ai-product-feed' ); ?></span>
                         </div>
                         <div class="acpfw-card__body">
                                 <div class="acpfw-stats">
@@ -655,10 +693,14 @@ final class ACPFW_Admin_Menu {
                                 <?php endif; ?>
 
                                 <p class="acpfw-card__actions">
-                                        <a class="button acpfw-btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_rescore_all' ), 'acpfw_rescore_all' ) ); ?>">
-                                                <span class="dashicons dashicons-awards"></span>
-                                                <?php esc_html_e( 'Recalculate all product scores', 'agentic-commerce-ai-product-feed' ); ?>
-                                        </a>
+                                        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="acpfw-inline-form">
+                                                <input type="hidden" name="action" value="acpfw_rescore_all" />
+                                                <?php wp_nonce_field( 'acpfw_rescore_all' ); ?>
+                                                <button type="submit" class="button acpfw-btn">
+                                                        <span class="dashicons dashicons-awards"></span>
+                                                        <?php esc_html_e( 'Recalculate all product scores', 'agentic-commerce-ai-product-feed' ); ?>
+                                                </button>
+                                        </form>
                                 </p>
                         </div>
                 </section>
@@ -738,7 +780,7 @@ final class ACPFW_Admin_Menu {
                                                                 <th scope="row"><label for="acpfw-mpn-source"><?php esc_html_e( 'MPN source', 'agentic-commerce-ai-product-feed' ); ?></label></th>
                                                                 <td>
                                                                         <input type="text" id="acpfw-mpn-source" name="mpn_source" class="regular-text" value="<?php echo esc_attr( (string) $settings['mpn_source'] ); ?>" placeholder="_sku" />
-                                                                        <p class="description"><?php esc_html_e( 'Optional meta key holding the manufacturer part number. Empty = MPN omitted unless SKU fallback is on.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                                                        <p class="description"><?php esc_html_e( 'Optional meta key holding the manufacturer part number. Empty = MPN omitted unless SKU fallback is on. Only map real manufacturer part numbers — OpenAI rejects invented ones (e.g. reusing SKUs across variations).', 'agentic-commerce-ai-product-feed' ); ?></p>
                                                                 </td>
                                                         </tr>
                                                         <tr>
@@ -782,14 +824,6 @@ final class ACPFW_Admin_Menu {
                                                                 </td>
                                                         </tr>
                                                         <tr>
-                                                                <th scope="row"><label for="acpfw-cron-url"><?php esc_html_e( 'External cron rebuild URL', 'agentic-commerce-ai-product-feed' ); ?></label></th>
-                                                                <td>
-                                                                        <input type="text" id="acpfw-cron-url" class="regular-text" readonly value="<?php echo esc_attr( $cron_url ); ?>" onclick="this.select()" />
-                                                                        <a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=acpfw_regen_cron_token' ), 'acpfw_regen_cron_token' ) ); ?>"><?php esc_html_e( 'Regenerate token', 'agentic-commerce-ai-product-feed' ); ?></a>
-                                                                        <p class="description"><?php esc_html_e( 'Call this URL from a real cron job or uptime monitor (e.g. hourly) to rebuild feeds + llms.txt on demand. It works with the "External cron / manual only" schedule, but is available in every mode. Anyone with this URL can trigger a rebuild — keep it secret.', 'agentic-commerce-ai-product-feed' ); ?></p>
-                                                                </td>
-                                                        </tr>
-                                                        <tr>
                                                                 <th scope="row"><?php esc_html_e( 'Uninstall', 'agentic-commerce-ai-product-feed' ); ?></th>
                                                                 <td>
                                                                         <label>
@@ -803,6 +837,24 @@ final class ACPFW_Admin_Menu {
 
                                         <?php submit_button( __( 'Save settings', 'agentic-commerce-ai-product-feed' ) ); ?>
                                 </form>
+
+                                <?php /* Cron rebuild URL sits outside the settings form so "Regenerate token" can be a proper POST form instead of a state-changing GET link. */ ?>
+                                <table class="form-table" role="presentation">
+                                        <tbody>
+                                                <tr>
+                                                        <th scope="row"><label for="acpfw-cron-url"><?php esc_html_e( 'External cron rebuild URL', 'agentic-commerce-ai-product-feed' ); ?></label></th>
+                                                        <td>
+                                                                <input type="text" id="acpfw-cron-url" class="regular-text" readonly value="<?php echo esc_attr( $cron_url ); ?>" onclick="this.select()" />
+                                                                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="acpfw-inline-form">
+                                                                        <input type="hidden" name="action" value="acpfw_regen_cron_token" />
+                                                                        <?php wp_nonce_field( 'acpfw_regen_cron_token' ); ?>
+                                                                        <button type="submit" class="button"><?php esc_html_e( 'Regenerate token', 'agentic-commerce-ai-product-feed' ); ?></button>
+                                                                </form>
+                                                                <p class="description"><?php esc_html_e( 'Call this URL from a real cron job or uptime monitor (e.g. hourly) to rebuild feeds + llms.txt on demand. It works with the "External cron / manual only" schedule, but is available in every mode. Anyone with this URL can trigger a rebuild — keep it secret.', 'agentic-commerce-ai-product-feed' ); ?></p>
+                                                        </td>
+                                                </tr>
+                                        </tbody>
+                                </table>
                         </div>
                 </section>
                 <?php
@@ -814,6 +866,7 @@ final class ACPFW_Admin_Menu {
          * @return void
          */
         private function render_pro_section() {
+                $pro_url = (string) apply_filters( 'acpfw_pro_url', 'https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce' );
                 ?>
                 <section class="acpfw-pro acpfw-section-anchor" id="acpfw-pro">
                         <p class="acpfw-pro__title">
@@ -826,6 +879,9 @@ final class ACPFW_Admin_Menu {
                                 <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'Agentic checkout endpoints: let approved AI agents complete purchases on-site.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
                                 <li><span class="dashicons dashicons-yes"></span><span><?php esc_html_e( 'Priority email support.', 'agentic-commerce-ai-product-feed' ); ?></span></li>
                         </ul>
+                        <p class="acpfw-pro__actions">
+                                <a class="button button-primary" href="<?php echo esc_url( $pro_url ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Learn more about Pro', 'agentic-commerce-ai-product-feed' ); ?> →</a>
+                        </p>
                         <p class="acpfw-pro__note"><?php esc_html_e( 'The free version stays 100% self-hosted with unlimited products — Pro never locks your catalog data.', 'agentic-commerce-ai-product-feed' ); ?></p>
                 </section>
                 <?php

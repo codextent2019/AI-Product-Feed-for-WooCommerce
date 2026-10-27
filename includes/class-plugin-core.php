@@ -222,6 +222,10 @@ final class ACPFW_Plugin_Core {
          * The directory gets an index.php to block directory listing; individual
          * feed files stay intentionally public at unguessable token URLs.
          *
+         * Also purges stale .tmp-* temp files left behind by a failed build
+         * (fatal error, disk full, timeout): anything older than six hours
+         * can no longer be part of an in-flight atomic write.
+         *
          * @return string Absolute path to the feed directory.
          */
         public static function prepare_feed_directory() {
@@ -233,6 +237,18 @@ final class ACPFW_Plugin_Core {
 
                 if ( ! file_exists( $feed_dir . '/index.php' ) ) {
                         file_put_contents( $feed_dir . '/index.php', "<?php // Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+                }
+
+                $stale_tmp = (array) glob( $feed_dir . '/*.tmp-*' ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+
+                if ( ! empty( $stale_tmp ) ) {
+                        $cutoff = time() - 6 * HOUR_IN_SECONDS;
+
+                        foreach ( $stale_tmp as $tmp_file ) {
+                                if ( is_file( $tmp_file ) && (int) filemtime( $tmp_file ) < $cutoff ) {
+                                        wp_delete_file( $tmp_file );
+                                }
+                        }
                 }
 
                 return $feed_dir;

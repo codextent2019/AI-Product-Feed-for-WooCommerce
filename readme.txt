@@ -1,12 +1,13 @@
-=== Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt ===
+=== Agentic Commerce & AI Product Feed for WooCommerce ===
 Contributors: codextent2019
 Tags: agentic-commerce, product feed, acp, ucp, llms.txt
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
+Requires Plugins: woocommerce
 WC requires at least: 7.6
 WC tested up to: 11.0
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,3 +85,15 @@ Open **WooCommerce > Agentic AI Feed > AI discovery endpoints**. The built-in AI
 * External cron rebuild endpoint hardened: explicit no-cache headers, ignore_user_abort, and a 1-rebuild-per-minute rate limit (HTTP 429 + Retry-After) as defense-in-depth against a leaked token.
 * Attribute detection rewritten as a unified resolver for simple / variable / variation / affiliate products: reads WC_Product_Attribute objects directly (no legacy get_attribute() quirks or comma-value false rejections), joins multiple values as "Blue/Green" per the merchant-center convention, and applies the same single-value parent rule in scoring as in feed rows; readiness message now adds an actionable note when an attribute exists but its values cannot reach feed rows (option pool or per-variation values never saved).
 * Variation export counts are now visible: the product metabox shows an amber note when some (or all) variations have no price and therefore cannot become feed rows (WooCommerce marks unpriced variations non-purchasable, and only purchasable variations are exported), with the exact bulk-price fix; llms-full.txt now reports "Available in N variants (M purchasable)" instead of overstating the buyable variant count.
+
+= 1.0.1 =
+* Duplicate-variant guard: variations that resolve to the same title + deep-link URL (identical option combinations) are exported once per group, as OpenAI expects unique option sets.
+* Consistent option names within a group: variation rows missing an option key used by their siblings are completed from the parent's default attributes instead of shipping a different option-name set.
+* Feeds are leaner: titles/descriptions are decoded from HTML entities ("Tom & Jerry", not "Tom &amp; Jerry"), the description falls back to the short description when the long one is empty, and placeholder return-policy URLs (e.g. the homepage) are omitted rather than claimed as real policies.
+* Image resolver now picks a right-sized JPEG/PNG: the largest generated size inside a 500-2600px quality band, then the scaled attached file — never a 150px thumbnail and never an unscaled multi-megapixel original when a scaled version exists.
+* CSV/JSONL generation hardened for PHP 8.4+ (explicit fputcsv escape argument), a failed atomic rename() is now reported in the dashboard and admin notice instead of silently updating stats, and stale .tmp-* files from failed builds are purged automatically.
+* Duplicate feed rows are counted and shown in generation stats.
+* Admin hygiene: state-changing buttons (Generate feeds, Recalculate scores, Regenerate cron token, Re-run checks) are now proper POST forms instead of GET links; the brand-source meta key no longer gets lowercased (case-sensitive meta keys work); the setup checklist no longer marks policies "done" when the return-policy URL is just the homepage; the Pro teaser has a filterable "Learn more" link (acpfw_pro_url); the "Auto-Fix with AI" chip only appears when an issue is genuinely AI-fixable.
+* AI crawler monitor now warns when the site URL points at localhost/private IPs or plain http://, so dev-site feeds are flagged before being submitted.
+* llms-full.txt now labels external/affiliate products (they cannot appear in the OpenAI purchasable feed), and the readiness card explains why scored products and feed rows can differ (grouped, unpriced, opt-outs).
+* Uninstall: transients, generated JPEG copies, and multisite sites are now cleaned up too; deactivation clears the WP-Cron rebuild event; Requires Plugins: woocommerce header added; translation-ready with a bundled .pot file.

@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce – ChatGPT Shopping, ACP, UCP & LLMs.txt
+ * Plugin Name: Agentic Commerce & AI Product Feed for WooCommerce
  * Plugin URI:  https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce
  * Description: Generate OpenAI ACP & ChatGPT Shopping product feeds (JSONL/CSV), UCP/ACP discovery manifests, /llms.txt + /llms-full.txt, and per-product AI Readiness Scores. 100% self-hosted — unlimited products, no external SaaS.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Author:      codextent2019
  * Author URI:  https://github.com/codextent2019
  * License:     GPL-2.0-or-later
@@ -12,6 +12,7 @@
  * Domain Path: /languages
  * Requires at least: 6.2
  * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  *
  * WC requires at least: 7.6
  * WC tested up to:      11.0
@@ -22,7 +23,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Core constants.
-define( 'ACPFW_VERSION', '1.0.0' );
+define( 'ACPFW_VERSION', '1.0.1' );
 define( 'ACPFW_PLUGIN_FILE', __FILE__ );
 define( 'ACPFW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ACPFW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -119,6 +120,10 @@ register_activation_hook( __FILE__, 'acpfw_activate_plugin' );
 /**
  * Plugin deactivation: clear scheduled background jobs and rewrite cache.
  *
+ * Clears BOTH schedulers: Action Scheduler recurring builds and the WP-Cron
+ * single event queued by the optional "rebuild on product changes" feature
+ * (a stale event would otherwise fire into a deactivated plugin).
+ *
  * @return void
  */
 function acpfw_deactivate_plugin() {
@@ -127,6 +132,9 @@ function acpfw_deactivate_plugin() {
                 as_unschedule_all_actions( 'acpfw_generate_feed_batch' );
                 as_unschedule_all_actions( 'acpfw_delta_feed_sync' );
         }
+
+        wp_clear_scheduled_hook( 'acpfw_rebuild_after_product_change' );
+        delete_option( 'acpfw_rebuild_pending' );
 
         flush_rewrite_rules();
 }

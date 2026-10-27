@@ -568,6 +568,31 @@
         color: var(--acpfw-gray);
 }
 
+
+/* --------------------------------------------------- Inline POST forms */
+
+/* State-changing buttons (generate, rescore, token regen) are real POST
+   forms now; keep them aligned with the surrounding button rows. */
+.acpfw-inline-form {
+        display: inline-block;
+        margin: 0;
+        vertical-align: middle;
+}
+
+.acpfw-inline-form + .acpfw-inline-form,
+.acpfw-card__actions .acpfw-inline-form,
+.acpfw-pro__actions {
+        margin-top: 0;
+}
+
+.acpfw-pro__actions {
+        margin: 0 0 12px;
+}
+
+.acpfw-pro__actions .button-primary {
+        text-decoration: none;
+}
+
 /* ------------------------------------------------------------- Settings */
 
 .acpfw-settings .form-table th {

@@ -1,0 +1,1027 @@
+# Copyright (C) 2026 codextent2019
+# This file is distributed under the GPL-2.0-or-later license.
+msgid ""
+msgstr ""
+"Project-Id-Version: Agentic Commerce & AI Product Feed for WooCommerce 1.0.1\n"
+"Report-Msgid-Bugs-To: https://github.com/codextent2019/AI-Product-Feed-for-WooCommerce/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-27 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"X-Generator: acpfw-pot-generator\n"
+"X-Domain: agentic-commerce-ai-product-feed\n"
+
+#: includes/Scoring/class-readiness-scorer.php
+#. /* translators: %s: attribute names that exist but cannot reach feed rows.
+msgid " Note: %s cannot reach the feed rows yet — keep one single value on the product, or set a value on each variation and save."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#. /* translators: 1: number of feed rows, 2: number of products, 3: date/time
+msgid "%1$s feed rows from %2$s products · last built %3$s"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#. /* translators: 1: number of rows, 2: date
+msgid "%1$s rows · built %2$s"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: %s: store name
+msgid "%s is a WooCommerce-powered online store. The links below let AI assistants and agents browse the full product catalog, understand purchasing policies, and access the machine-readable product feed."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "%s — full product catalog"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "(on sale: "
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "+ Add question"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "A new external cron rebuild token was generated. Update your cron job URL if it calls the old one."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "ACP discovery manifest"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "ACP manifest"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI Auto-Fix: bring-your-own-key (OpenAI or Anthropic) one-click rewrites of weak descriptions and missing Q&A."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#: includes/Admin/class-product-list-column.php
+#: includes/Admin/class-product-metabox.php
+msgid "AI Blocked"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "AI Blocked (0-49)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI Discovery"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "AI Product Feed (ChatGPT / Agentic)"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "AI Readiness"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#: includes/Admin/class-product-list-column.php
+#: includes/Admin/class-product-metabox.php
+msgid "AI Ready"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "AI Ready (80-100)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI crawler checks re-run."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "AI crawler monitor"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "AI crawlers in robots.txt"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI discovery endpoints"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI discovery files"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "AI store summary"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Accepted payments"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+#. /* translators: %s: comma-separated list of attribute names.
+msgid "Add at least 2 structured attributes (%s)."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Add the questions shoppers actually ask, e.g. \"Is this machine washable?\" — at least 2 pairs earn the full FAQ score."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Add your return policy URL and a shipping summary in Settings — AI agents quote them to shoppers."
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Age group"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Agentic AI Feed"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Agentic Commerce Protocol discovery (OpenAI)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Agentic checkout endpoints: let approved AI agents complete purchases on-site."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: %s: currency code, e.g. USD
+msgid "All prices are shown in %s and include applicable taxes as configured by the store."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "All products"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "All readiness checks passed — this product is fully AI Ready."
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "All readiness checks passed."
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "All recognized structured attributes are present."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Also rebuild automatically whenever product data changes (price, stock, name, Q&A, brand override, etc.)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Always live at your site root (unless switched off in Settings)."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Amazon AI (Rufus)"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Answer"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "Auto-Fix with AI"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Automatic (from stock status)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Automatic rebuild"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Availability"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Availability override"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: 1: total variations, 2: purchasable variations.
+msgid "Available in %1$d variants (%2$d purchasable, sizes/colors etc.)"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Available in %d variants (sizes/colors etc.)"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Available on backorder"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "BLOCKED"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Backorder"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Brand"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Brand override"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Brand source"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Build the OpenAI JSONL/CSV feed files from your published catalog."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "CSV feed"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Call this URL from a real cron job or uptime monitor (e.g. hourly) to rebuild feeds + llms.txt on demand. It works with the \"External cron / manual only\" schedule, but is available in every mode. Anyone with this URL can trigger a rebuild — keep it secret."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Cart"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Catalog AI readiness"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Categories"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "ChatGPT Search"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "ChatGPT Shopping product feed"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "ChatGPT user browsing"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Checkout"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Claude"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Color"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Commerce data"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Commerce guide"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Commerce guide: %s"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Common Crawl (feeds many AI models)"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Contact"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Conversational Q&A (for AI shopping prompts)"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Could not reach the URL from inside WordPress (loopback requests may be blocked by your host — common on local dev). Visit the URL manually to confirm."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Currency and prices"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: %s: checkout URL
+msgid "Customers browse products at %1$s and check out at %2$s. Each product page supports standard WooCommerce add-to-cart; an AI agent session (agentic checkout) is planned for the Pro version."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Dashboard sections"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Delete all plugin data (settings, feeds, scores) when the plugin is deleted"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Delta sync: price/stock changes reach the feed within minutes, not tomorrow."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Describe your store policies"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Description too thin (< 120 chars) for AI answers"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Done"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Email: %s"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Every product is scored 0-100 against seven AI-channel checks; scores update live as you edit. Scores cover your whole catalog — the product feed additionally skips grouped products, unpriced variations and opt-outs, so feed row counts can be lower."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Exclude this product from all AI feeds and llms.txt output"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+#: includes/Admin/class-product-metabox.php
+msgid "Excluded"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "External cron / manual only"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "External cron rebuild URL"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "FAQ"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Fallback brand"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Feed file not found yet — click \"Generate / refresh feeds now\"."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Feed generation finished but the final files could not be moved into place (rename failed). Check the write permissions of wp-content/uploads/acpfw-feeds/ and try again — the previous feed files are still being served."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Feeds"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Feeds and AI discovery files generated successfully."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Feeds built. They rebuild automatically once per day and after every manual refresh."
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "Filter by AI readiness"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Format: each product lists its URL, price, availability, brand, a short description and store-provided Q&A when available. Visit the product URL for the live page."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Full catalog for AI"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Full product catalog"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "GTIN source"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Gemini / Google AI"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Gender"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Generate feeds"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Generate feeds now"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Generate your product feeds"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: %s: date
+msgid "Generated on %s for AI assistants. Prices are in %s."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Go further with Pro — $79/year per site"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+#. ? sprintf( /* translators: %d: HTTP status code */ __( 'HTTP %d — serving correctly.', 'agentic-commerce-ai-product-feed' ), $code )
+msgid "HTTP %d — see the fix hints on this page. If permalinks were just enabled, re-save Settings > Permalinks."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "HTTP %d — serving correctly."
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+#. /* translators: 1: attribute names the product already has, 2: attribute names that would satisfy the check.
+msgid "Has %1$s — add at least one more AI attribute (%2$s)."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Hourly"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "How often WordPress rebuilds the product feeds and llms.txt files. \"External cron / manual only\" switches off the built-in scheduler and waits for the rebuild URL below."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "How to buy"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Image missing, too small, or WebP only"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "In stock"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Invalid product."
+msgstr ""
+
+#: includes/class-plugin-core.php
+msgid "Invalid rebuild token."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Learn more about Pro"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Leave \"auto\" for the automatic chain, or enter a meta key to read brands from (e.g. a brand plugin field)."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Lowest-scoring products"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "MPN source"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Material"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Meta key holding the barcode. \"_global_unique_id\" uses the WooCommerce 9.2+ built-in GTIN field. Invalid check digits are dropped automatically."
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Missing brand (required by OpenAI spec)"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Missing price or title (blocked from feed)"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Missing valid GTIN or MPN identifier"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "My account"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#: includes/Admin/class-product-list-column.php
+#: includes/Admin/class-product-metabox.php
+msgid "Needs Polish"
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "Needs Polish (50-79)"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Needs at least 2 structured attributes (material/color/size/gender/age group)"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "No AI crawler is blocked by WordPress robots.txt filters. (Hosting firewalls and CDNs are outside WordPress and not covered here.)"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "No conversational Q&A for AI prompts"
+msgstr ""
+
+#: includes/Discovery/class-well-known-router.php
+msgid "Not found."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Not scored yet"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+#. /* translators: 1: skipped variation count, 2: total variation count.
+msgid "Note: %1$d of your %2$d variations have no price and cannot become feed rows — only purchasable variations are exported. To export them: Variations tab → select all → Bulk actions → Set regular price → Save changes, then click Generate feeds now."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Note: external/affiliate product — checkout happens on the merchant's site, so this item is not part of the OpenAI purchasable product feed."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+#. /* translators: %d: total variation count.
+msgid "Note: none of your %d variations has a price, so this product currently contributes 0 rows to the feed. To fix: Variations tab → select all → Bulk actions → Set regular price → Save changes, then click Generate feeds now."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Off"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "On"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Once a day (default)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Once a week"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "One or more AI crawlers are fully blocked in robots.txt (by a plugin, your host, or Cloudflare). Unblock them or AI assistants cannot read your products."
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "One-click AI Auto-Fix is included in the Pro version."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Open settings"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "OpenAI JSONL feed"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "OpenAI product feed (JSONL)"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "OpenAI training crawler"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Optional meta key holding the manufacturer part number. Empty = MPN omitted unless SKU fallback is on. Only map real manufacturer part numbers — OpenAI rejects invented ones (e.g. reusing SKUs across variations)."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Optional. Leave empty to auto-detect from Brands, attributes or SEO plugins. OpenAI requires a brand on every product."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Out of stock"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Payment methods are configured at checkout."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Perplexity Shopping"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Plain-text summary AI agents can quote, e.g. \"Free shipping over $50, delivery in 2-5 business days via DHL.\" Leave empty for generic text."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Policies"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Pre-order"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Price"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Primary feed for ChatGPT Shopping"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Priority email support."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Privacy policy"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Pro"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Product feed (CSV)"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Product feed reachable"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Product feeds"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Public page describing your return policy. Used in feeds and llms-commerce.txt."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Question"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Re-run checks"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Readiness"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Rebuild on product changes"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Rebuilds are batched: they run about a minute after the last product save (via WP-Cron), so bulk edits and imports stay fast."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Rebuilds automatically %s (change in Settings). Submit the JSONL URL to OpenAI Merchant Center / ChatGPT Shopping."
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "Recalculate AI Readiness Score"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Recalculate all product scores"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Recalculate score"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Regenerate feeds now"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Regenerate token"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "Remove question"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Return policy"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Return policy / shipping summary saved. AI assistants use these to answer pre-sale questions."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Return policy URL"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Returns and refunds"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "SKU as MPN fallback"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Same data in CSV for any comparison engine"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Save settings"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Saving refreshes llms.txt and the manifests automatically."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Search engines allowed"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "See product page"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Seller name"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Serve /.well-known/acp.json (ACP manifest)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Serve /.well-known/ucp (UCP manifest)"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Serve /llms.txt, /llms-full.txt and /llms-commerce.txt"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Settings"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Settings > Reading has \"Discourage search engines\" enabled — most AI crawlers will respect this and stay away."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Settings saved. AI discovery files refreshed."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Setup"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Shipping"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Shipping options and rates are calculated at checkout based on the delivery address. Contact the store for details before ordering."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Shipping summary"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Shopping"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Shown to AI assistants and inside feeds. Defaults to your site title."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Site URL is publicly reachable"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Site URL uses HTTPS"
+msgstr ""
+
+#: includes/Scoring/class-readiness-scorer.php
+msgid "Size"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "The free version stays 100% self-hosted with unlimited products — Pro never locks your catalog data."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+#. /* translators: %s: return policy URL
+msgid "The full return policy is published at %s."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "The llms.txt files build on first visit — or hit Generate in the Feeds section right now."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "The store has not published a dedicated return policy URL yet. Contact the store for return instructions."
+msgstr ""
+
+#: includes/Admin/class-product-list-column.php
+msgid "This product is excluded from all AI feeds and llms.txt."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "This product is hidden from all AI channels. Uncheck the box below to include it."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "To do"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Twice a day"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "UCP discovery manifest"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "UCP manifest"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Uninstall"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Universal Commerce Protocol discovery"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Unknown"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Use the SKU as MPN when no manufacturer part number exists"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Used only when no brand is found per product (Brands taxonomy, attributes, Yoast/Rank Math)."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Verify AI discovery endpoints"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "View discovery URLs"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "Website: %s"
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "WordPress is not discouraging crawlers."
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "You are not allowed to edit this product."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "You are not allowed to manage feeds."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "You are not allowed to manage products."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+#: includes/Admin/class-env-checks.php
+msgid "You are not allowed to manage settings."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Your WooCommerce catalog, readable for ChatGPT Shopping, AI agents and assistants — product feeds, llms.txt discovery and per-product AI Readiness Scores. 100% self-hosted."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Your WordPress address is a public HTTPS hostname — feeds and discovery URLs are fetchable from the internet."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+#. /* translators: %s: current site host, e.g. localhost
+msgid "Your WordPress address points at \"%s\" — a private/dev host. Every feed row and llms.txt link carries this hostname, so AI crawlers and OpenAI cannot fetch anything. Move the site to a public domain (Settings > General) before submitting the feed."
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "Your return policy URL points at your homepage — that is not a real policy page. Create a dedicated returns page and paste its URL in Settings."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "Your site URL starts with http://. Most AI shopping channels expect https:// product and image URLs — install an SSL certificate and update the WordPress address before going live."
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "every purchasable product with prices, availability and links"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "hourly"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "how to buy, shipping, returns, payments and support"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "llms-commerce.txt — buying, shipping, returns, payments"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "llms-full.txt — every product with price and availability"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "llms.txt and friends are live at your site root. Share the URLs with any AI crawler."
+msgstr ""
+
+#: includes/Admin/class-env-checks.php
+msgid "llms.txt reachable"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "llms.txt — short, human/AI-readable store index"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "machine-readable store + feed metadata"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "once a day"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "once a week"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "same feed in CSV format"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "store currency"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "twice a day"
+msgstr ""
+
+#: includes/Discovery/class-llms-txt-generator.php
+msgid "universal commerce protocol discovery"
+msgstr ""
+
+#: includes/Admin/class-admin-menu.php
+msgid "via external cron"
+msgstr ""
+
+#: includes/Admin/class-product-metabox.php
+msgid "—"
+msgstr ""
+

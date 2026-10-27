@@ -358,7 +358,12 @@ final class ACPFW_LLMS_Txt_Generator {
 
                 fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
 
-                rename( $tmp, $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                // A failed swap must not pretend success.
+                if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+                        wp_delete_file( $tmp );
+
+                        return false;
+                }
 
                 return true;
         }
@@ -433,6 +438,10 @@ final class ACPFW_LLMS_Txt_Generator {
                                         $lines[] = '- ' . sprintf( /* translators: %d: number of variations */ __( 'Available in %d variants (sizes/colors etc.)', 'agentic-commerce-ai-product-feed' ), $variation_count );
                                 }
                         }
+                }
+
+                if ( $product->is_type( 'external' ) ) {
+                        $lines[] = '- ' . __( 'Note: external/affiliate product — checkout happens on the merchant\'s site, so this item is not part of the OpenAI purchasable product feed.', 'agentic-commerce-ai-product-feed' );
                 }
 
                 $description = wp_strip_all_tags( strip_shortcodes( (string) $product->get_short_description() ) );
@@ -643,7 +652,11 @@ final class ACPFW_LLMS_Txt_Generator {
                 fwrite( $handle, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
                 fclose( $handle );            // phpcs:ignore WordPress.WP.AlternativeFunctions.
 
-                rename( $tmp, $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.
+                if ( ! @rename( $tmp, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors, WordPress.WP.AlternativeFunctions
+                        wp_delete_file( $tmp );
+
+                        return false;
+                }
 
                 return true;
         }

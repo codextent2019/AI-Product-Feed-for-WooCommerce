@@ -279,16 +279,25 @@ final class ACPFW_Product_Mapper {
                  */
                 $row['item_id'] = 'wc_' . $product_id;
 
+                /*
+                 * Variant context. Option names are completed so every row of
+                 * one group carries the same option names: keys missing on a
+                 * variation are filled from the parent's default attributes
+                 * instead of being silently dropped (OpenAI wants consistent
+                 * option names within a group).
+                 */
                 $variant_dict = array();
                 if ( $is_variation ) {
                         $variant_dict = self::get_variant_dict( $product );
+                        $variant_dict = self::fill_variant_group_keys( $variant_dict, $parent );
                         $row['group_id']               = 'wc_' . $parent->get_id();
                         $row['listing_has_variations'] = true;
                         $row['variant_dict']           = $variant_dict;
                 }
 
                 /*
-                 * Title (plain text, max 150 chars).
+                 * Title (plain text, max 150 chars). HTML entities are
+                 * decoded so feeds carry "Tom & Jerry", not "Tom &amp; Jerry".
                  */
                 if ( $is_variation ) {
                         $title = trim( (string) $parent->get_name() );
@@ -298,18 +307,28 @@ final class ACPFW_Product_Mapper {
                 } else {
                         $title = (string) $product->get_name();
                 }
-                $row['title'] = self::truncate( wp_strip_all_tags( $title ), 150 );
+                $row['title'] = self::truncate( self::clean_text( $title ), 150 );
 
                 /*
                  * Description (plain text, max 5000 chars). Variations concatenate
                  * parent description + variation description when present.
+                 * Falls back to the short description when the long description
+                 * is empty, so thin rows never ship with a blank description.
                  */
                 if ( $is_variation ) {
                         $description = trim( (string) $parent->get_description() . "\n\n" . (string) $product->get_description() );
+
+                        if ( '' === $description ) {
+                                $description = (string) $parent->get_short_description();
+                        }
                 } else {
                         $description = (string) $product->get_description();
+
+                        if ( '' === trim( $description ) ) {
+                                $description = (string) $product->get_short_description();
+                        }
                 }
-                $description = wp_strip_all_tags( strip_shortcodes( $description ) );
+                $description = self::clean_text( strip_shortcodes( $description ) );
                 // Normalize Windows/Mac line endings so feed consumers get clean \n.
                 $description        = str_replace( array( "\r\n", "\r" ), "\n", $description );
                 $row['description'] = self::truncate( $description, 5000 );
@@ -455,10 +474,21 @@ final class ACPFW_Product_Mapper {
                 // Free plugin: no ACP checkout sessions; Pro flips this flag.
                 $row['is_eligible_checkout'] = false;
 
+                /*
+                 * Return policy. A homepage or placeholder URL would be sent
+                 * to OpenAI as a real policy claim, so placeholder values are
+                 * omitted entirely (the row stays valid; the admin checklist
+                 * flags the missing policy instead).
+                 */
                 $return_policy = '';
                 if ( isset( $settings['return_policy_url'] ) ) {
                         $return_policy = (string) $settings['return_policy_url'];
                 }
+
+                if ( '' !== $return_policy && self::is_placeholder_policy_url( $return_policy ) ) {
+                        $return_policy = '';
+                }
+
                 $row['return_policy'] = esc_url_raw( $return_policy );
 
                 /**
@@ -968,6 +998,98 @@ final class ACPFW_Product_Mapper {
                 }
 
                 return $value;
+        }
+
+        /**
+         * Normalize a title/description for feed output: strip tags, decode
+         * HTML entities ("&amp;" -> "&"), collapse whitespace runs and trim.
+         *
+         * @param string $text Raw text.
+         * @return string
+         */
+        private static function clean_text( $text ) {
+                $text = wp_strip_all_tags( (string) $text );
+                $text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+                $text = preg_replace( '/[ \t\x0B\f]+/u', ' ', $text );
+
+                return trim( (string) $text );
+        }
+
+        /**
+         * True when a policy URL is empty of meaning: no URL at all, or a
+         * URL that only points at the site homepage (same host, no path).
+         * Used by the feed mapper (omit placeholder claims) and the admin
+         * setup checklist (refuse to mark the policies step done).
+         *
+         * @param string $url Candidate policy URL.
+         * @return bool
+         */
+        public static function is_placeholder_policy_url( $url ) {
+                $url = trim( (string) $url );
+
+                if ( '' === $url ) {
+                        return true;
+                }
+
+                $host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+                $site = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+                if ( '' === $host || '' === $site ) {
+                        return false;
+                }
+
+                if ( $host !== $site ) {
+                        return false; // Different host: a real external policy page.
+                }
+
+                $path = trim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
+
+                return '' === $path; // Same host, no path: the homepage.
+        }
+
+        /**
+         * Complete a variation's option set so every row of one group uses
+         * the same option names: missing keys are filled from the parent's
+         * default attributes (converted to term labels where taxonomy-based).
+         *
+         * @param array      $dict   Variation option dict (slug => label).
+         * @param WC_Product $parent Parent variable product.
+         * @return array
+         */
+        private static function fill_variant_group_keys( $dict, $parent ) {
+                $defaults = $parent->get_default_attributes();
+
+                if ( empty( $defaults ) || ! is_array( $defaults ) ) {
+                        return $dict;
+                }
+
+                foreach ( $defaults as $attr_key => $default_slug ) {
+                        $clean = preg_replace( '/^attribute_/', '', strtolower( (string) $attr_key ) );
+                        $clean = preg_replace( '/^pa_/', '', (string) $clean );
+
+                        if ( '' === $clean || isset( $dict[ $clean ] ) || '' === (string) $default_slug ) {
+                                continue;
+                        }
+
+                        $taxonomy = 'pa_' . $clean;
+                        $label    = (string) $default_slug;
+
+                        if ( taxonomy_exists( $taxonomy ) ) {
+                                $term = get_term_by( 'slug', (string) $default_slug, $taxonomy );
+
+                                if ( $term && ! is_wp_error( $term ) ) {
+                                        $label = $term->name;
+                                }
+                        }
+
+                        if ( '' !== $label ) {
+                                $dict[ $clean ] = $label;
+                        }
+                }
+
+                ksort( $dict );
+
+                return $dict;
         }
 
         /**

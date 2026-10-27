@@ -1,0 +1,51 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  php-lint:
+    name: PHP syntax check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.4', '8.1', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint every PHP file
+        run: |
+          fail=0
+          while IFS= read -r -d '' file; do
+            php -l "$file" || fail=1
+          done < <(find . -type f -name '*.php' -print0)
+          exit $fail
+
+  css-check:
+    name: CSS brace balance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check CSS files for balanced braces
+        run: |
+          fail=0
+          for f in assets/css/*.css; do
+            open=$(tr -cd '{' < "$f" | wc -c)
+            close=$(tr -cd '}' < "$f" | wc -c)
+            if [ "$open" -ne "$close" ]; then
+              echo "::error file=$f::Unbalanced braces: $open '{' vs $close '}'"
+              fail=1
+            else
+              echo "$f: balanced ($open pairs)"
+            fi
+          done
+          exit $fail
